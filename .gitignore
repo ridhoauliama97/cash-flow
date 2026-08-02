@@ -34,3 +34,8 @@ supabase/.branches
 *.njsproj
 *.sln
 *.sw?
+
+# Agent skills (npx skills add artifacts)
+.claude/
+.agents/
+skills-lock.json
