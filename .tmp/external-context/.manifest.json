@@ -1,0 +1,64 @@
+{
+  "version": "1.0",
+  "last_updated": "2026-08-02T00:00:00Z",
+  "libraries": {
+    "@supabase/supabase-js": {
+      "files": [
+        {
+          "filename": "setup-auth-queries.md",
+          "topic": "setup, auth, queries",
+          "tech_stack": "React + Vite + TypeScript",
+          "fetched": "2026-08-02T00:00:00Z",
+          "source": "Context7 API + official repo"
+        },
+        {
+          "filename": "rls-csv-import.md",
+          "topic": "RLS policies + CSV/bulk import",
+          "tech_stack": "React + Vite + TypeScript",
+          "fetched": "2026-08-02T00:00:00Z",
+          "source": "Context7 API + supabase.com docs"
+        }
+      ]
+    },
+    "recharts": {
+      "files": [
+        {
+          "filename": "charts-v3-usage.md",
+          "topic": "charts v3 usage (Area/Bar/Pie/Line/waterfall)",
+          "tech_stack": "React",
+          "fetched": "2026-08-02T00:00:00Z",
+          "source": "Context7 API + GitHub releases"
+        },
+        {
+          "filename": "v3-migration.md",
+          "topic": "v3 breaking changes vs v2",
+          "tech_stack": "React",
+          "fetched": "2026-08-02T00:00:00Z",
+          "source": "Context7 API (3.0 migration guide)"
+        }
+      ]
+    },
+    "freecurrencyapi": {
+      "files": [
+        {
+          "filename": "latest-endpoint.md",
+          "topic": "latest rates endpoint + response shape",
+          "tech_stack": "React + Vite",
+          "fetched": "2026-08-02T00:00:00Z",
+          "source": "Official docs + npm registry"
+        }
+      ]
+    },
+    "shadcn-ui": {
+      "files": [
+        {
+          "filename": "vite-tailwind-v4-setup.md",
+          "topic": "Vite + Tailwind v4 setup, theming, cn()",
+          "tech_stack": "Vite + Tailwind v4 + React",
+          "fetched": "2026-08-02T00:00:00Z",
+          "source": "ui.shadcn.com official docs + Context7"
+        }
+      ]
+    }
+  }
+}
