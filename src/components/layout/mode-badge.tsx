@@ -37,7 +37,7 @@ export function ModeBadge() {
           <TooltipContent>
             {ratesStatus?.ok === false
               ? ratesStatus.error ?? "Rates unavailable — using static fallback."
-              : "Exchange rates from freecurrencyapi, refreshed automatically."}
+              : "Exchange rates from currencyapi.com, refreshed automatically."}
           </TooltipContent>
         </Tooltip>
       </div>

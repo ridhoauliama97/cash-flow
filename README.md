@@ -11,7 +11,7 @@ Runs out of the box with **deterministic demo data** (no configuration required)
 - **Expense analytics** — category breakdown, budget vs actual, monthly trend
 - **Cash flow** — waterfall chart, net cash position, weekly spending pattern
 - **Receivables aging** — 5 aging buckets (current / 30 / 60 / 90 / 90+ days), overdue amounts, per-client breakdown
-- **Multi-currency** — 7 currencies (USD, EUR, GBP, JPY, AUD, SGD, IDR), home currency configurable (default **IDR**), live rates via [freecurrencyapi](https://freecurrencyapi.com) with offline fallback
+- **Multi-currency** — 7 currencies (USD, EUR, GBP, JPY, AUD, SGD, IDR), home currency configurable (default **IDR**), live rates via [currencyapi.com](https://currencyapi.com) with offline fallback
 - **Transactions** — full CRUD, search, filters (category, type, date range, amount), CSV export
 - **CSV import** — bulk import with automatic category inference and template download
 - **Forecast** — 90-day trend + seasonality projection with confidence band
@@ -52,7 +52,7 @@ Copy the following into a `.env` file at the project root (or your hosting provi
 | --- | --- |
 | `VITE_SUPABASE_URL` | Supabase project URL. When set (with the anon key), the app switches from local demo data to the cloud database and enables auth. |
 | `VITE_SUPABASE_ANON_KEY` | Supabase anon/publishable API key. |
-| `VITE_FREECURRENCY_API_KEY` | API key from freecurrencyapi.com for live exchange rates (otherwise static fallback rates are used). Can also be entered at runtime in Settings → Exchange Rates. |
+| `VITE_CURRENCY_API_KEY` | API key from currencyapi.com for live exchange rates (otherwise static fallback rates are used). Can also be entered at runtime in Settings → Exchange Rates. |
 
 The frontend only ever reads `VITE_`-prefixed variables at build time.
 

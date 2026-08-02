@@ -61,11 +61,13 @@ const storeRef: { current: Store } = { current: resolveStore() }
 
 const API_KEY_STORAGE = "cashflow:rates-api-key"
 
+/** Initial key: localStorage override, else the build-time env var. */
 function readApiKey(): string {
+  const envKey = import.meta.env.VITE_CURRENCY_API_KEY as string | undefined
   try {
-    return localStorage.getItem(API_KEY_STORAGE) ?? ""
+    return localStorage.getItem(API_KEY_STORAGE) ?? envKey ?? ""
   } catch {
-    return ""
+    return envKey ?? ""
   }
 }
 

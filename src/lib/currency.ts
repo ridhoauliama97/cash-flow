@@ -6,7 +6,7 @@ import {
   type RateStatus,
 } from "@/types";
 
-const API_BASE = "https://api.freecurrencyapi.com/v1/latest";
+const API_BASE = "https://api.currencyapi.com/v3/latest";
 
 /**
  * Static fallback rates (approx. per 1 unit of home currency).
@@ -54,8 +54,10 @@ export function convert(
 }
 
 /**
- * Fetch live rates from freecurrencyapi for the given home currency.
+ * Fetch live rates from currencyapi.com v3 for the given home currency.
  * Returns normalized per-1-home-unit rates plus status info.
+ * v3 response shape: { data: { USD: { code, value }, ... } } where
+ * `value` = units of `code` per 1 `base_currency`.
  */
 export async function fetchLiveRates(
   apiKey: string,
@@ -75,10 +77,10 @@ export async function fetchLiveRates(
   }
 
   const json = (await res.json().catch(() => null)) as {
-    data?: Partial<Record<CurrencyCode, number>>;
+    data?: Partial<Record<CurrencyCode, { code?: string; value?: number }>>;
   } | null;
   const data = json?.data;
-  if (!data || typeof data[home] !== "number") {
+  if (!data || typeof data[home]?.value !== "number") {
     return {
       rates: ratesForHome(FALLBACK_RATES_PER_USD, home),
       source: "fallback",
@@ -87,7 +89,8 @@ export async function fetchLiveRates(
   }
 
   const rates = CURRENCIES.reduce((acc, code) => {
-    acc[code] = typeof data[code] === "number" ? (data[code] as number) : 1;
+    const value = data[code]?.value;
+    acc[code] = typeof value === "number" && value > 0 ? value : 1;
     return acc;
   }, {} as Rates);
   rates[home] = 1;

@@ -258,7 +258,7 @@ export function SettingsPage() {
               />
               <StatRow
                 label="Source"
-                value={rates?.source === "live" ? "freecurrencyapi" : "Fallback"}
+                value={rates?.source === "live" ? "currencyapi.com" : "Fallback"}
               />
             </div>
             <div className="grid gap-2">
@@ -268,10 +268,10 @@ export function SettingsPage() {
                 type="password"
                 value={keyInput}
                 onChange={(e) => setKeyInput(e.target.value)}
-                placeholder="freecurrencyapi key"
+                placeholder="currencyapi key"
               />
               <p className="text-xs text-muted-foreground">
-                Used to fetch live rates from freecurrencyapi.com. Leave blank to use fallback rates.
+                Used to fetch live rates from currencyapi.com. Leave blank to use fallback rates.
               </p>
             </div>
             <Button variant="outline" size="sm" onClick={() => void handleRefreshRates()}>
