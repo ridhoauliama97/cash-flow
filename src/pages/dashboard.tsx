@@ -9,20 +9,26 @@ import { byDimension, balanceBefore, byMonth, computeKpis, sumByType } from "@/l
 import { mrrSummary } from "@/lib/analytics/mrr"
 import { getPeriodRange, getPreviousRange } from "@/lib/analytics/periods"
 import { formatDate, formatDurationDays, formatMoney, formatPercent, formatPercentPlain, formatSigned } from "@/lib/format"
-import { fromISODate, todayISO } from "@/lib/utils"
-import { AreaTrend } from "@/components/charts/area-trend"
+import { cn, fromISODate, todayISO } from "@/lib/utils"
+import { NEGATIVE_COLOR, POSITIVE_COLOR } from "@/lib/chart-colors"
 import { DonutChart } from "@/components/charts/donut-chart"
+import { RangeAreaChart } from "@/components/charts/range-area-chart"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { EmptyState } from "@/components/shared/empty-state"
 import { FilterBar } from "@/components/shared/filter-bar"
 import { KpiCard } from "@/components/shared/kpi-card"
+import { MetricCard } from "@/components/shared/metric-card"
 import { PageHeader } from "@/components/shared/page-header"
 import { PeriodSelect } from "@/components/shared/period-select"
 import { TransactionFormDialog } from "@/components/shared/transaction-form-dialog"
-import { TransactionsTable } from "@/components/shared/transactions-table"
 import { useApp } from "@/context/app-context"
+
+function initialsOf(description: string): string {
+  const parts = description.trim().split(/\s+/).slice(0, 2)
+  return parts.map((p) => p[0]?.toUpperCase() ?? "").join("") || "?"
+}
 
 export function DashboardPage() {
   const { transactions, invoices, profile, homeCurrency } = useApp()
@@ -107,6 +113,18 @@ export function DashboardPage() {
     [transactions, filters, openingBalance],
   )
 
+  // Sparkline series (last 12 months).
+  const revenueSpark = useMemo(() => trend.map((p) => p.revenue), [trend])
+  const expenseSpark = useMemo(() => trend.map((p) => p.expenses), [trend])
+  const netSpark = useMemo(() => trend.map((p) => p.net), [trend])
+  const cashSpark = useMemo(() => {
+    let acc = 0
+    return trend.map((p) => {
+      acc += p.net
+      return acc
+    })
+  }, [trend])
+
   const recent = useMemo(
     () =>
       applyFilters(transactions, filters)
@@ -138,7 +156,7 @@ export function DashboardPage() {
       <FilterBar filters={filters} onChange={setFilters} options={filterOptions} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard
+        <MetricCard
           label="Revenue"
           value={formatMoney(kpis.revenue, homeCurrency)}
           icon={TrendingUp}
@@ -148,8 +166,10 @@ export function DashboardPage() {
             neutral: kpis.revenueGrowth === null,
           }}
           sub={`${formatPercentPlain(kpis.margin)} margin`}
+          sparkline={revenueSpark}
+          sparklineColor={POSITIVE_COLOR}
         />
-        <KpiCard
+        <MetricCard
           label="Expenses"
           value={formatMoney(kpis.expenses, homeCurrency)}
           icon={TrendingDown}
@@ -159,8 +179,10 @@ export function DashboardPage() {
             neutral: kpis.expenseGrowth === null,
           }}
           sub={`${formatMoney(kpis.avgDailyExpense, homeCurrency, true)}/day`}
+          sparkline={expenseSpark}
+          sparklineColor={NEGATIVE_COLOR}
         />
-        <KpiCard
+        <MetricCard
           label="Net income"
           value={formatSigned(kpis.net, homeCurrency)}
           icon={PiggyBank}
@@ -170,8 +192,10 @@ export function DashboardPage() {
             neutral: kpis.netGrowth === null,
           }}
           sub="vs previous period"
+          sparkline={netSpark}
+          sparklineColor="var(--chart-3)"
         />
-        <KpiCard
+        <MetricCard
           label="Cash position"
           value={formatMoney(kpis.cashPosition, homeCurrency)}
           icon={Landmark}
@@ -180,6 +204,8 @@ export function DashboardPage() {
             positive: cashDelta >= 0,
           }}
           sub={kpis.runwayDays !== null ? `${kpis.runwayDays} days runway` : "No runway data"}
+          sparkline={cashSpark}
+          sparklineColor="var(--chart-4)"
         />
       </div>
 
@@ -220,15 +246,19 @@ export function DashboardPage() {
           <CardTitle>Revenue vs expenses</CardTitle>
         </CardHeader>
         <CardContent>
-          {trend.length === 0 ? (
+          {filteredAll.length === 0 ? (
             <EmptyState
               title="No data yet"
-              description="Add transactions to see your monthly revenue and expenses."
+              description="Add transactions to see your daily revenue and expenses."
               onAction={() => setAddOpen(true)}
               actionLabel="Add transaction"
             />
           ) : (
-            <AreaTrend data={trend} currency={homeCurrency} height={300} />
+            <RangeAreaChart
+              transactions={filteredAll}
+              openingBalance={openingBalance}
+              currency={homeCurrency}
+            />
           )}
         </CardContent>
       </Card>
@@ -282,6 +312,9 @@ export function DashboardPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Recent activity</CardTitle>
+          <Button asChild variant="ghost" size="sm" className="text-muted-foreground">
+            <Link to="/transactions">View all</Link>
+          </Button>
         </CardHeader>
         <CardContent>
           {recent.length === 0 ? (
@@ -292,7 +325,33 @@ export function DashboardPage() {
               actionLabel="Add transaction"
             />
           ) : (
-            <TransactionsTable transactions={recent} compact />
+            <ul className="divide-y">
+              {recent.map((t) => (
+                <li key={t.id} className="flex items-center gap-3 py-3">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground">
+                    {initialsOf(t.description)}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{t.description}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {t.category}
+                      {t.client ? ` · ${t.client}` : ""} · {formatDate(t.date)}
+                    </p>
+                  </div>
+                  <span
+                    className={cn(
+                      "shrink-0 text-sm font-medium tabular-nums",
+                      t.type === "revenue"
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-destructive",
+                    )}
+                  >
+                    {t.type === "revenue" ? "+" : "−"}
+                    {formatMoney(t.baseAmount, homeCurrency)}
+                  </span>
+                </li>
+              ))}
+            </ul>
           )}
         </CardContent>
       </Card>
