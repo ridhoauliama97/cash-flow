@@ -1,6 +1,6 @@
 import { Database, Globe } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useApp } from "@/context/app-context"
 
 /** Shows the current data mode (demo/local vs Supabase) and rate source. */
@@ -12,9 +12,8 @@ export function ModeBadge() {
   const dataIcon = <Database className="size-3" />
 
   return (
-    <TooltipProvider>
-      <div className="flex items-center gap-2">
-        <Tooltip>
+    <div className="flex items-center gap-2">
+      <Tooltip>
           <TooltipTrigger asChild>
             <Badge variant="secondary" className="gap-1.5">
               {dataIcon}
@@ -40,7 +39,6 @@ export function ModeBadge() {
               : "Exchange rates from currencyapi.com, refreshed automatically."}
           </TooltipContent>
         </Tooltip>
-      </div>
-    </TooltipProvider>
+    </div>
   )
 }
