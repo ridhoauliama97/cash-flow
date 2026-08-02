@@ -3,7 +3,6 @@ import type { CurrencyCode } from "@/types"
 import type { MonthPoint } from "@/lib/analytics/kpis"
 import { ChartTooltipBody, type TooltipRow } from "@/components/charts/chart-tooltip"
 import { formatMoney } from "@/lib/format"
-import { useTheme } from "@/hooks/use-theme"
 import { POSITIVE_COLOR, NEGATIVE_COLOR } from "@/lib/chart-colors"
 
 /**
@@ -18,9 +17,9 @@ export function AreaTrend({
   currency: CurrencyCode
   height?: number
 }) {
-  const { resolvedTheme } = useTheme()
-  const gridColor = resolvedTheme === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"
-  const tickColor = resolvedTheme === "dark" ? "var(--muted-foreground)" : "var(--muted-foreground)"
+  // Theme-aware via CSS tokens so the chart follows light/dark automatically.
+  const gridColor = "var(--border)"
+  const tickColor = "var(--muted-foreground)"
 
   const tooltipContent = ({ active, payload, label }: TooltipContentProps) => {
     const rows: TooltipRow[] = (payload ?? []).map((p) => ({

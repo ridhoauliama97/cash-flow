@@ -70,7 +70,7 @@ export function DonutChart({
           <span className="text-sm font-semibold tabular-nums">{centerValue}</span>
         </div>
       </div>
-      <ul className="w-full min-w-0 flex-1 space-y-2">
+      <ul className="flex w-full min-w-0 flex-1 flex-col gap-2">
         {data.map((d, i) => (
           <li key={d.name} className="flex items-center gap-2 text-sm">
             <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />

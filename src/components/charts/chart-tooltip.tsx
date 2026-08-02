@@ -26,7 +26,7 @@ export function ChartTooltipBody({
   return (
     <div className="rounded-lg border bg-popover px-3 py-2 text-popover-foreground shadow-md">
       {label !== undefined && <p className="mb-1 text-xs font-medium text-muted-foreground">{label}</p>}
-      <div className="space-y-1">
+      <div className="flex flex-col gap-1">
         {rows.map((r) => (
           <div key={r.name} className="flex items-center justify-between gap-4 text-sm">
             <span className="flex items-center gap-1.5 text-muted-foreground">
