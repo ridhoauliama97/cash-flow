@@ -23,7 +23,7 @@ import type {
   TransactionDraft,
 } from "@/types"
 import { convert, ensureRates } from "@/lib/currency"
-import { resolveStore, type Store } from "@/lib/store"
+import { resolveStore, getSupabaseClient, type Store } from "@/lib/store"
 import { localStore } from "@/lib/store/local"
 import { generateDemoData } from "@/lib/demo"
 import { uid } from "@/lib/utils"
@@ -92,7 +92,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false
+    // Monotonic version guard: only the latest load attempt may commit state,
+    // so overlapping loads (auth events + initial check) can't race.
+    let version = 0
     const load = async () => {
+      const v = ++version
       try {
         const [prof, txs, invs, billsData, budgetsData, scheds, cachedRates] = await Promise.all([
           storeRef.current.getProfile(),
@@ -103,7 +107,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           storeRef.current.getSchedules(),
           storeRef.current.getRates(),
         ])
-        if (cancelled) return
+        if (cancelled || v !== version) return
         setProfile(prof)
         setTransactions(txs)
         setInvoices(invs)
@@ -112,7 +116,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setSchedules(scheds)
 
         const result = await ensureRates(cachedRates, prof.homeCurrency, apiKey || undefined)
-        if (cancelled) return
+        if (cancelled || v !== version) return
         const nextRates: CachedRates = {
           base: prof.homeCurrency,
           rates: result.rates,
@@ -129,14 +133,64 @@ export function DataProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         console.error("Failed to load data", error)
       } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled && v === version) setLoading(false)
       }
     }
-    void load()
+
+    const clearAll = () => {
+      setProfile(null)
+      setTransactions([])
+      setInvoices([])
+      setBills([])
+      setBudgets([])
+      setSchedules([])
+      setRates(null)
+      setRatesStatus(null)
+    }
+
+    const client = getSupabaseClient()
+    if (!client || mode === "local") {
+      // Local mode: load once on mount.
+      setLoading(true)
+      void load()
+      return () => {
+        cancelled = true
+      }
+    }
+
+    // Supabase mode: DataProvider mounts before the user signs in, so data
+    // must be (re)loaded on auth changes instead of only once on mount —
+    // otherwise the dashboard stays empty until a manual refresh.
+    setLoading(true)
+    const { data: sub } = client.auth.onAuthStateChange((event, session) => {
+      if (session && event !== "INITIAL_SESSION") {
+        setLoading(true)
+        void load()
+      } else if (!session) {
+        if (!cancelled) {
+          clearAll()
+          setLoading(false)
+        }
+      }
+    })
+
+    // Session may already exist on first mount (e.g. page reload while
+    // logged in). INITIAL_SESSION is ignored above to avoid double-loading.
+    client.auth
+      .getUser()
+      .then(({ data }) => {
+        if (!cancelled && data.user) void load()
+        else if (!cancelled) setLoading(false)
+      })
+      .catch(() => {
+        if (!cancelled) setLoading(false)
+      })
+
     return () => {
       cancelled = true
+      sub.subscription.unsubscribe()
     }
-  }, [])
+  }, [mode, apiKey])
 
   const homeCurrency = profile?.homeCurrency ?? "USD"
 

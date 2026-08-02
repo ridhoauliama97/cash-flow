@@ -101,6 +101,11 @@ function Gate() {
       setAuthed(true)
       return
     }
+    // React to auth changes (login/logout, also from other tabs) instead of
+    // only checking once on mount.
+    const { data: sub } = client.auth.onAuthStateChange((_event, session) => {
+      if (!cancelled) setAuthed(Boolean(session))
+    })
     client.auth
       .getUser()
       .then(({ data }) => {
@@ -113,6 +118,7 @@ function Gate() {
       })
     return () => {
       cancelled = true
+      sub.subscription.unsubscribe()
     }
   }, [mode])
 
