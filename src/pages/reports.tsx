@@ -63,7 +63,7 @@ export function ReportsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Financial reports"
+        title="Reports & Export"
         description="Generate P&L, balance sheet and cash flow statements from your transactions."
         actions={
           <>

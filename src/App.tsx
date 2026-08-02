@@ -14,6 +14,7 @@ import { getSupabaseClient } from "@/lib/store"
 const DashboardPage = lazy(() => import("@/pages/dashboard").then((m) => ({ default: m.DashboardPage })))
 const RevenuePage = lazy(() => import("@/pages/revenue").then((m) => ({ default: m.RevenuePage })))
 const ExpensesPage = lazy(() => import("@/pages/expenses").then((m) => ({ default: m.ExpensesPage })))
+const ProfitabilityPage = lazy(() => import("@/pages/profitability").then((m) => ({ default: m.ProfitabilityPage })))
 const CashFlowPage = lazy(() => import("@/pages/cash-flow").then((m) => ({ default: m.CashFlowPage })))
 const ReceivablesPage = lazy(() => import("@/pages/receivables").then((m) => ({ default: m.ReceivablesPage })))
 const TransactionsPage = lazy(() => import("@/pages/transactions").then((m) => ({ default: m.TransactionsPage })))
@@ -54,6 +55,7 @@ function Shell() {
               <Route path="/" element={<DashboardPage />} />
               <Route path="/revenue" element={<RevenuePage />} />
               <Route path="/expenses" element={<ExpensesPage />} />
+              <Route path="/profitability" element={<ProfitabilityPage />} />
               <Route path="/cash-flow" element={<CashFlowPage />} />
               <Route path="/receivables" element={<ReceivablesPage />} />
               <Route path="/transactions" element={<TransactionsPage />} />

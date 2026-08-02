@@ -10,6 +10,7 @@ import {
   PiggyBank,
   Settings,
   Sun,
+  TrendingUp,
   Upload,
   Wallet,
 } from "lucide-react"
@@ -19,14 +20,15 @@ import { Button } from "@/components/ui/button"
 import { useTheme } from "@/hooks/use-theme"
 
 const NAV_ITEMS = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/", label: "Overview", icon: LayoutDashboard },
   { to: "/revenue", label: "Revenue", icon: BarChart3 },
   { to: "/expenses", label: "Expenses", icon: Wallet },
+  { to: "/profitability", label: "Profitability", icon: TrendingUp },
   { to: "/cash-flow", label: "Cash Flow", icon: LineChart },
-  { to: "/receivables", label: "Receivables", icon: PiggyBank },
+  { to: "/receivables", label: "Receivable & Payable", icon: PiggyBank },
   { to: "/transactions", label: "Transactions", icon: ArrowDownUp },
   { to: "/forecast", label: "Forecast", icon: CalendarClock },
-  { to: "/reports", label: "Reports", icon: FileText },
+  { to: "/reports", label: "Reports & Export", icon: FileText },
   { to: "/import", label: "Import Data", icon: Upload },
   { to: "/schedules", label: "Schedules", icon: FileDown },
   { to: "/settings", label: "Settings", icon: Settings },

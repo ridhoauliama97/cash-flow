@@ -118,7 +118,7 @@ export function DashboardPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Dashboard"
+        title="Overview"
         description="Cash position, revenue and expenses at a glance."
         actions={
           <>

@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { useSearchParams } from "react-router-dom"
 import {
   AlertTriangle,
   Banknote,
@@ -181,7 +182,14 @@ function BillPaymentDialog({ bill, onClose }: { bill: Bill | null; onClose: () =
 
 export function ReceivablesPage() {
   const { invoices, bills, homeCurrency, deleteInvoices, deleteBills } = useApp()
-  const [tab, setTab] = useState<"ar" | "ap">("ar")
+  const [searchParams] = useSearchParams()
+  const [tab, setTab] = useState<"ar" | "ap">(searchParams.get("tab") === "ap" ? "ap" : "ar")
+
+  // Keep the tab in sync when navigating here with ?tab= from elsewhere.
+  const paramTab = searchParams.get("tab") === "ap" ? "ap" : "ar"
+  useEffect(() => {
+    setTab(paramTab)
+  }, [paramTab])
   const [addOpen, setAddOpen] = useState(false)
   const [paying, setPaying] = useState<Invoice | null>(null)
   const [billAddOpen, setBillAddOpen] = useState(false)
@@ -223,7 +231,7 @@ export function ReceivablesPage() {
   if (invoices.length === 0 && bills.length === 0) {
     return (
       <div className="space-y-6">
-        <PageHeader title="AR / AP" description="Track outstanding invoices (AR) and vendor bills (AP)." actions={addButton} />
+        <PageHeader title="Receivable & Payable" description="Track outstanding invoices (AR) and vendor bills (AP)." actions={addButton} />
         <EmptyState
           title="No receivables or payables yet"
           description="Create an invoice to track outstanding receivables, or a bill to track what you owe vendors."
