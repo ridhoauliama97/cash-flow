@@ -1,7 +1,9 @@
 import { Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useApp } from "@/context/app-context"
+import { GlobalSearch } from "@/components/shared/global-search"
 import { ModeBadge } from "@/components/layout/mode-badge"
+import { NotificationMenu } from "@/components/shared/notification-menu"
 
 export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
   const { profile } = useApp()
@@ -18,7 +20,9 @@ export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
         </div>
       </div>
       <div className="flex items-center gap-2">
+        <GlobalSearch />
         <ModeBadge />
+        <NotificationMenu />
       </div>
     </header>
   )
