@@ -80,7 +80,7 @@ export function ForecastPage() {
       chartData.push({ ...f, forecastNet: f.net, forecastBalance: f.balance })
     })
     return { forecast, currentBalance, chartData }
-  }, [profile, transactions, invoices])
+  }, [profile, transactions, invoices, homeCurrency])
 
   if (!profile) return null
 
