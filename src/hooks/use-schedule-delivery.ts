@@ -2,6 +2,31 @@ import { useEffect } from "react";
 import { toast } from "sonner";
 import { useApp } from "@/context/app-context";
 
+export interface DeliveryLogEntry {
+  id: string;
+  name: string;
+  format: string;
+  at: string; // ISO datetime
+}
+
+const DELIVERY_LOG_KEY = "cash-flow:delivery-log";
+const MAX_LOG_ENTRIES = 50;
+
+export function readDeliveryLog(): DeliveryLogEntry[] {  try {
+    const raw = localStorage.getItem(DELIVERY_LOG_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as DeliveryLogEntry[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function appendDeliveryLog(entry: DeliveryLogEntry): void {
+  const log = [entry, ...readDeliveryLog()].slice(0, MAX_LOG_ENTRIES);
+  localStorage.setItem(DELIVERY_LOG_KEY, JSON.stringify(log));
+}
+
 function nextRunFrom(frequency: string, from: Date): string {
   const d = new Date(from);
   switch (frequency) {
@@ -39,9 +64,11 @@ export function useScheduleDelivery(): void {
         toast.info(`Report delivered: ${s.name} (${s.format.toUpperCase()})`, {
           description: `Sent to ${s.recipients}. Next run: ${nextRunFrom(s.frequency, new Date()).slice(0, 10)}`,
         });
+        const at = new Date().toISOString();
+        appendDeliveryLog({ id: `delivered-${Date.now()}`, name: s.name, format: s.format, at });
         void upsertSchedule({
           ...s,
-          lastSentAt: new Date().toISOString(),
+          lastSentAt: at,
           nextRunAt: nextRunFrom(s.frequency, new Date()),
         });
       }
