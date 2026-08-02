@@ -2,15 +2,28 @@ import { useRef, useState, type ChangeEvent } from "react"
 import {
   CheckCircle2,
   ClipboardPaste,
+  Columns3,
   Database,
+  ListChecks,
   Loader2,
   RotateCcw,
   TriangleAlert,
   Upload,
 } from "lucide-react"
 import { toast } from "sonner"
+import Papa from "papaparse"
 import { useApp } from "@/context/app-context"
-import { csvTemplate, parseTransactionsCsv, type CsvParseResult } from "@/lib/csv"
+import {
+  CSV_FIELDS,
+  FIELD_LABELS,
+  csvTemplate,
+  dedupeTransactions,
+  detectColumnMapping,
+  parseCsvWithMapping,
+  type CsvColumnMapping,
+  type CsvField,
+  type CsvParseResult,
+} from "@/lib/csv"
 import { demoSummary } from "@/lib/demo"
 import { formatMoney } from "@/lib/format"
 import { Badge } from "@/components/ui/badge"
@@ -26,6 +39,13 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
   Table,
   TableBody,
   TableCell,
@@ -38,9 +58,13 @@ import { PageHeader } from "@/components/shared/page-header"
 import { StatRow } from "@/components/shared/kpi-card"
 
 export function ImportPage() {
-  const { mode, addTransactions, resetDemo } = useApp()
+  const { mode, addTransactions, resetDemo, transactions } = useApp()
   const [text, setText] = useState("")
   const [parsed, setParsed] = useState<CsvParseResult | null>(null)
+  const [mapping, setMapping] = useState<CsvColumnMapping | null>(null)
+  const [headers, setHeaders] = useState<string[]>([])
+  const [skipDuplicates, setSkipDuplicates] = useState(true)
+  const [duplicateCount, setDuplicateCount] = useState(0)
   const [importing, setImporting] = useState(false)
   const [imported, setImported] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -51,13 +75,49 @@ export function ImportPage() {
     const content = await file.text()
     setText(content)
     setParsed(null)
+    setMapping(null)
+    setHeaders([])
+    setDuplicateCount(0)
     setImported(false)
     if (fileRef.current) fileRef.current.value = ""
   }
 
-  const handleParse = () => {
-    setParsed(parseTransactionsCsv(text))
+  const applyParse = (m: CsvColumnMapping, skip: boolean) => {
+    const result = parseCsvWithMapping(text, m)
+    let final = result
+    let dups = 0
+    if (skip) {
+      const ded = dedupeTransactions(result.transactions, transactions)
+      dups = ded.duplicates.length
+      final = { ...result, transactions: ded.kept, skipped: result.skipped + dups }
+    }
+    setParsed(final)
+    setDuplicateCount(dups)
     setImported(false)
+  }
+
+  const handleParse = () => {
+    const probe = Papa.parse<Record<string, string>>(text, {
+      header: true,
+      skipEmptyLines: true,
+    })
+    const cols = probe.meta.fields ?? []
+    setHeaders(cols)
+    const m = detectColumnMapping(cols)
+    setMapping(m)
+    applyParse(m, skipDuplicates)
+  }
+
+  const handleMappingChange = (field: CsvField, value: string) => {
+    if (!mapping) return
+    const next = { ...mapping, [field]: value === "__none__" ? null : value }
+    setMapping(next)
+    applyParse(next, skipDuplicates)
+  }
+
+  const handleToggleDedupe = (skip: boolean) => {
+    setSkipDuplicates(skip)
+    if (mapping) applyParse(mapping, skip)
   }
 
   const handleImport = async () => {
@@ -167,15 +227,76 @@ export function ImportPage() {
       {parsed && (
         <Card>
           <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Columns3 className="size-4" />
+              Column mapping
+            </CardTitle>
+            <CardDescription>
+              Map CSV columns to fields — unmapped fields fall back to auto-detection or defaults.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {CSV_FIELDS.map((field) => (
+                <div key={field} className="grid gap-1">
+                  <Label className="text-xs text-muted-foreground">{FIELD_LABELS[field]}</Label>
+                  <Select
+                    value={mapping?.[field] ?? ""}
+                    onValueChange={(v) => handleMappingChange(field, v)}
+                  >
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Not mapped" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">— Not mapped —</SelectItem>
+                      {headers.map((h) => (
+                        <SelectItem key={h} value={h}>
+                          {h}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {parsed && (
+        <Card>
+          <CardHeader>
             <CardTitle className="flex items-center justify-between gap-2">
               <span>Preview</span>
-              <span className="text-sm font-normal text-muted-foreground">
-                {parsed.transactions.length} ready
-                {parsed.skipped > 0 && ` · ${parsed.skipped} skipped`}
+              <span className="flex items-center gap-3">
+                <label className="flex cursor-pointer items-center gap-1.5 text-sm font-normal text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    className="size-3.5"
+                    checked={skipDuplicates}
+                    onChange={(e) => handleToggleDedupe(e.target.checked)}
+                  />
+                  <ListChecks className="size-3.5" />
+                  Skip existing rows
+                </label>
+                <span className="text-sm font-normal text-muted-foreground">
+                  {parsed.transactions.length} ready
+                  {parsed.skipped > 0 && ` · ${parsed.skipped} skipped`}
+                </span>
               </span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {duplicateCount > 0 && (
+              <Alert>
+                <ListChecks className="size-4" />
+                <AlertTitle>Duplicates skipped</AlertTitle>
+                <AlertDescription>
+                  {duplicateCount} rows already exist in your data (same date, description, amount and
+                  currency) and were not included.
+                </AlertDescription>
+              </Alert>
+            )}
             {imported && (
               <Alert>
                 <CheckCircle2 className="size-4" />

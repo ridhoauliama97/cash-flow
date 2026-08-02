@@ -8,6 +8,8 @@ import {
   type ReactNode,
 } from "react"
 import type {
+  Bill,
+  BillDraft,
   Budget,
   CachedRates,
   CurrencyCode,
@@ -32,6 +34,7 @@ interface AppData {
   profile: Profile | null
   transactions: Transaction[]
   invoices: Invoice[]
+  bills: Bill[]
   budgets: Budget[]
   schedules: ReportSchedule[]
   rates: CachedRates | null
@@ -45,6 +48,9 @@ interface AppData {
   addInvoice(draft: InvoiceDraft): Promise<void>
   updateInvoice(inv: Invoice): Promise<void>
   deleteInvoices(ids: string[]): Promise<void>
+  addBill(draft: BillDraft): Promise<void>
+  updateBill(bill: Bill): Promise<void>
+  deleteBills(ids: string[]): Promise<void>
   upsertBudgets(budgets: Budget[]): Promise<void>
   deleteBudgets(ids: string[]): Promise<void>
   upsertSchedule(schedule: ScheduleDraft | ReportSchedule): Promise<void>
@@ -76,6 +82,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [bills, setBills] = useState<Bill[]>([])
   const [budgets, setBudgets] = useState<Budget[]>([])
   const [schedules, setSchedules] = useState<ReportSchedule[]>([])
   const [rates, setRates] = useState<CachedRates | null>(null)
@@ -87,10 +94,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
     let cancelled = false
     const load = async () => {
       try {
-        const [prof, txs, invs, budgetsData, scheds, cachedRates] = await Promise.all([
+        const [prof, txs, invs, billsData, budgetsData, scheds, cachedRates] = await Promise.all([
           storeRef.current.getProfile(),
           storeRef.current.getTransactions(),
           storeRef.current.getInvoices(),
+          storeRef.current.getBills(),
           storeRef.current.getBudgets(),
           storeRef.current.getSchedules(),
           storeRef.current.getRates(),
@@ -99,6 +107,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setProfile(prof)
         setTransactions(txs)
         setInvoices(invs)
+        setBills(billsData)
         setBudgets(budgetsData)
         setSchedules(scheds)
 
@@ -171,6 +180,25 @@ export function DataProvider({ children }: { children: ReactNode }) {
     [homeCurrency],
   )
 
+  const buildBill = useCallback(
+    (draft: BillDraft, rateMap: Rates): Bill => ({
+      id: uid(),
+      number: draft.number,
+      vendor: draft.vendor,
+      issueDate: draft.issueDate,
+      dueDate: draft.dueDate,
+      amount: draft.amount,
+      currency: draft.currency,
+      baseAmount: Math.round(convert(draft.amount, draft.currency, homeCurrency, rateMap)),
+      paidAmount: 0,
+      status: "unpaid",
+      category: draft.category,
+      notes: draft.notes,
+      createdAt: new Date().toISOString(),
+    }),
+    [homeCurrency],
+  )
+
   const withRates = useCallback(
     async <T,>(fn: (r: Rates) => Promise<T> | T): Promise<T> => {
       if (!rates) throw new Error("Exchange rates are not loaded yet — please try again")
@@ -229,6 +257,33 @@ export function DataProvider({ children }: { children: ReactNode }) {
     async (ids: string[]) => {
       await storeRef.current.deleteInvoices(ids)
       setInvoices((prev) => prev.filter((i) => !ids.includes(i.id)))
+    },
+    [],
+  )
+
+  const addBill = useCallback(
+    async (draft: BillDraft) => {
+      await withRates(async (rateMap) => {
+        const built = buildBill(draft, rateMap)
+        await storeRef.current.addBills([built])
+        setBills((prev) => [...prev, built])
+      })
+    },
+    [buildBill, withRates],
+  )
+
+  const updateBill = useCallback(
+    async (bill: Bill) => {
+      await storeRef.current.updateBill(bill)
+      setBills((prev) => prev.map((b) => (b.id === bill.id ? bill : b)))
+    },
+    [],
+  )
+
+  const deleteBills = useCallback(
+    async (ids: string[]) => {
+      await storeRef.current.deleteBills(ids)
+      setBills((prev) => prev.filter((b) => !ids.includes(b.id)))
     },
     [],
   )
@@ -330,6 +385,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setProfile(demo.profile)
       setTransactions(demo.transactions)
       setInvoices(demo.invoices)
+      setBills(demo.bills)
       setBudgets(demo.budgets)
       setSchedules(demo.schedules)
       setRates({ ...demo.rates, fetchedAt: new Date().toISOString() })
@@ -351,6 +407,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       profile,
       transactions,
       invoices,
+      bills,
       budgets,
       schedules,
       rates,
@@ -364,6 +421,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       addInvoice,
       updateInvoice,
       deleteInvoices,
+      addBill,
+      updateBill,
+      deleteBills,
       upsertBudgets,
       deleteBudgets,
       upsertSchedule,
@@ -374,9 +434,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       convertAmount,
     }),
     [
-      loading, mode, profile, transactions, invoices, budgets, schedules, rates, ratesStatus,
+      loading, mode, profile, transactions, invoices, bills, budgets, schedules, rates, ratesStatus,
       homeCurrency, apiKey, setApiKey, addTransactions, updateTransaction, deleteTransactions, addInvoice,
-      updateInvoice, deleteInvoices, upsertBudgets, deleteBudgets, upsertSchedule,
+      updateInvoice, deleteInvoices, addBill, updateBill, deleteBills, upsertBudgets, deleteBudgets, upsertSchedule,
       deleteSchedule, saveProfile, refreshRates, resetDemo, convertAmount,
     ],
   )

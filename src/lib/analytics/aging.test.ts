@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { agingBuckets, overdueDays, outstandingByClient } from "@/lib/analytics/aging"
+import { agingBuckets, expectedCollections, outstandingBills, overdueDays, outstandingByClient } from "@/lib/analytics/aging"
 import type { Invoice } from "@/types"
 
 const inv = (overrides: Partial<Invoice>): Invoice => ({
@@ -74,5 +74,37 @@ describe("outstandingByClient", () => {
     const out = outstandingByClient(invoices)
     expect(out.map((o) => o.client)).toEqual(["Beta", "Acme"])
     expect(out[1]).toMatchObject({ client: "Acme", total: 150, count: 2, oldest: "2026-07-01" })
+  })
+})
+
+describe("expectedCollections", () => {
+  it("sums outstanding amounts due within the horizon, including overdue", () => {
+    const invoices = [
+      inv({ id: "a", baseAmount: 100, dueDate: "2026-08-15" }), // within 30d
+      inv({ id: "b", baseAmount: 200, dueDate: "2026-07-01" }), // overdue
+      inv({ id: "c", baseAmount: 300, dueDate: "2026-09-15" }), // beyond horizon
+      inv({ id: "d", baseAmount: 400, status: "paid", dueDate: "2026-08-10" }), // excluded
+      inv({ id: "e", baseAmount: 50, paidAmount: 20, dueDate: "2026-08-10" }), // partial
+    ]
+    expect(expectedCollections(invoices, TODAY, 30)).toBe(100 + 200 + 30)
+  })
+
+  it("handles a zero horizon", () => {
+    const invoices = [
+      inv({ id: "a", baseAmount: 100, dueDate: "2026-08-02" }), // today
+      inv({ id: "b", baseAmount: 200, dueDate: "2026-08-03" }), // tomorrow
+    ]
+    expect(expectedCollections(invoices, TODAY, 0)).toBe(100)
+  })
+})
+
+describe("outstandingBills", () => {
+  it("sums outstanding bills and excludes paid ones", () => {
+    const bills = [
+      { id: "1", vendor: "AWS", baseAmount: 100, paidAmount: 0, status: "unpaid" },
+      { id: "2", vendor: "Figma", baseAmount: 200, paidAmount: 50, status: "partial" },
+      { id: "3", vendor: "Slack", baseAmount: 300, paidAmount: 300, status: "paid" },
+    ] as unknown as import("@/types").Bill[]
+    expect(outstandingBills(bills)).toBe(250)
   })
 })

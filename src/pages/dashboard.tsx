@@ -1,12 +1,14 @@
 import { useMemo, useState } from "react"
 import { Link } from "react-router-dom"
-import { ArrowUpRight, Landmark, PiggyBank, Plus, TrendingDown, TrendingUp } from "lucide-react"
+import { ArrowUpRight, Flame, Landmark, PiggyBank, Plus, Repeat, TrendingDown, TrendingUp } from "lucide-react"
 import { EMPTY_FILTERS, type DashboardFilters, type PeriodKey } from "@/types"
 import { agingBuckets, overdueDays } from "@/lib/analytics/aging"
+import { burnMetrics } from "@/lib/analytics/burn"
 import { applyFilters, dimensionValues, effectiveTransactions } from "@/lib/analytics/filter"
 import { byDimension, balanceBefore, byMonth, computeKpis, sumByType } from "@/lib/analytics/kpis"
+import { mrrSummary } from "@/lib/analytics/mrr"
 import { getPeriodRange, getPreviousRange } from "@/lib/analytics/periods"
-import { formatDate, formatMoney, formatPercent, formatPercentPlain, formatSigned } from "@/lib/format"
+import { formatDate, formatDurationDays, formatMoney, formatPercent, formatPercentPlain, formatSigned } from "@/lib/format"
 import { fromISODate, todayISO } from "@/lib/utils"
 import { AreaTrend } from "@/components/charts/area-trend"
 import { DonutChart } from "@/components/charts/donut-chart"
@@ -93,6 +95,18 @@ export function DashboardPage() {
   const aging = useMemo(() => agingBuckets(invoices, todayISO()), [invoices])
   const atRisk = aging.atRisk.slice(0, 3)
 
+  // Executive metrics respect the current filters but ignore the date range
+  // so MRR and burn reflect the full ledger, not just the selected period.
+  const filteredAll = useMemo(
+    () => effectiveTransactions(transactions, invoices, filters, homeCurrency),
+    [transactions, invoices, filters, homeCurrency],
+  )
+  const mrr = useMemo(() => mrrSummary(filteredAll), [filteredAll])
+  const burn = useMemo(
+    () => burnMetrics(applyFilters(transactions, { ...filters, dateFrom: null, dateTo: null }), openingBalance, 6),
+    [transactions, filters, openingBalance],
+  )
+
   const recent = useMemo(
     () =>
       applyFilters(transactions, filters)
@@ -166,6 +180,38 @@ export function DashboardPage() {
             positive: cashDelta >= 0,
           }}
           sub={kpis.runwayDays !== null ? `${kpis.runwayDays} days runway` : "No runway data"}
+        />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard
+          label="MRR"
+          value={formatMoney(mrr.mrr, homeCurrency)}
+          icon={Repeat}
+          trend={{
+            value: mrr.growthPct === null ? "—" : formatPercent(mrr.growthPct),
+            positive: (mrr.growthPct ?? 0) >= 0,
+            neutral: mrr.growthPct === null,
+          }}
+          sub={`${formatMoney(mrr.arr, homeCurrency, true)} ARR`}
+        />
+        <KpiCard
+          label="Gross burn"
+          value={formatMoney(burn.grossBurn, homeCurrency)}
+          icon={Flame}
+          sub={`avg / month (last ${burn.windowMonths})`}
+        />
+        <KpiCard
+          label="Net burn"
+          value={formatSigned(burn.netBurn, homeCurrency)}
+          icon={TrendingDown}
+          sub={burn.netBurn >= 0 ? "cash-flow positive" : "cash consumed monthly"}
+        />
+        <KpiCard
+          label="Runway"
+          value={burn.runwayDays === null ? "—" : formatDurationDays(burn.runwayDays)}
+          icon={PiggyBank}
+          sub={burn.runwayMonths === null ? "no expenses" : "at current gross burn"}
         />
       </div>
 

@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react"
-import { CalendarClock, Landmark, TrendingDown, TrendingUp, Wallet } from "lucide-react"
+import { CalendarClock, Flame, Landmark, TrendingDown, TrendingUp, Wallet } from "lucide-react"
 
 import type { DashboardFilters, PeriodKey } from "@/types"
 import { EMPTY_FILTERS } from "@/types"
 
 import { applyFilters, dimensionValues, effectiveTransactions } from "@/lib/analytics/filter"
 import { balanceBefore, computeKpis, dailyBalances } from "@/lib/analytics/kpis"
+import { burnMetrics } from "@/lib/analytics/burn"
 import { getPeriodRange, getPreviousRange } from "@/lib/analytics/periods"
 import { cashFlowWaterfall, weeklyPattern } from "@/lib/analytics/waterfall"
 import { formatDurationDays, formatMoney, formatPercent, formatSigned } from "@/lib/format"
@@ -16,7 +17,7 @@ import { BarCompare } from "@/components/charts/bar-compare"
 import { WaterfallChart } from "@/components/charts/waterfall-chart"
 import { EmptyState } from "@/components/shared/empty-state"
 import { FilterBar } from "@/components/shared/filter-bar"
-import { KpiCard } from "@/components/shared/kpi-card"
+import { KpiCard, StatRow } from "@/components/shared/kpi-card"
 import { PageHeader } from "@/components/shared/page-header"
 import { PeriodSelect } from "@/components/shared/period-select"
 import { TransactionFormDialog } from "@/components/shared/transaction-form-dialog"
@@ -89,6 +90,13 @@ export function CashFlowPage() {
       ? { value: "n/a", positive: false, neutral: true }
       : { value: formatPercent(growth), positive: growth >= 0 }
 
+  // Burn-rate metrics respect the current filters but ignore the date range
+  // so the runway reflects the full ledger, not just the selected period.
+  const burn = useMemo(
+    () => burnMetrics(applyFilters(transactions, { ...filters, dateFrom: null, dateTo: null }), openingBalance, 6),
+    [transactions, filters, openingBalance],
+  )
+
   if (transactions.length === 0) {
     return (
       <div className="space-y-6">
@@ -130,6 +138,40 @@ export function CashFlowPage() {
           icon={CalendarClock}
           sub={`${formatMoney(kpis.avgDailyExpense, homeCurrency, true)}/day avg expense`}
         />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Flame className="size-4 text-muted-foreground" />
+              Burn rate
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1">
+            <StatRow label={`Gross burn · avg / month (last ${burn.windowMonths})`} value={formatMoney(burn.grossBurn, homeCurrency)} />
+            <StatRow
+              label="Net burn · avg / month"
+              value={formatSigned(burn.netBurn, homeCurrency)}
+              hint={burn.netBurn >= 0 ? "cash-flow positive" : "cash consumed monthly"}
+            />
+            <StatRow
+              label="Runway"
+              value={burn.runwayDays === null ? "—" : formatDurationDays(burn.runwayDays)}
+              hint={burn.runwayMonths === null ? "no expenses" : "at current gross burn"}
+            />
+          </CardContent>
+        </Card>
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Cash position</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1">
+            <StatRow label="Cash on hand" value={formatMoney(burn.cashPosition, homeCurrency)} />
+            <StatRow label="Gross burn" value={formatMoney(burn.grossBurn, homeCurrency)} hint={`avg of last ${burn.windowMonths} month${burn.windowMonths === 1 ? "" : "s"}`} />
+            <StatRow label="Net burn" value={formatSigned(burn.netBurn, homeCurrency)} hint="revenue − expenses, monthly average" />
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">

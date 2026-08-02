@@ -1,4 +1,5 @@
 import type {
+  Bill,
   Budget,
   CachedRates,
   Invoice,
@@ -66,6 +67,22 @@ export function createSupabaseStore(
     month: row.month as string,
     category: row.category as string,
     amount: row.amount as number,
+  });
+
+  const mapBill = (row: Record<string, unknown>): Bill => ({
+    id: row.id as string,
+    number: row.number as string,
+    vendor: row.vendor as string,
+    issueDate: row.issue_date as string,
+    dueDate: row.due_date as string,
+    amount: row.amount as number,
+    currency: row.currency as Bill["currency"],
+    baseAmount: row.base_amount as number,
+    paidAmount: row.paid_amount as number,
+    status: row.status as Bill["status"],
+    category: row.category as string,
+    notes: (row.notes as string | null) ?? undefined,
+    createdAt: row.created_at as string,
   });
 
   const mapSchedule = (row: Record<string, unknown>): ReportSchedule => ({
@@ -242,6 +259,60 @@ export function createSupabaseStore(
     },
     async deleteInvoices(ids: string[]): Promise<void> {
       const { error } = await supabase.from("invoices").delete().in("id", ids);
+      if (error) throw new Error(error.message);
+    },
+
+    async getBills(): Promise<Bill[]> {
+      const id = await userId();
+      const { data, error } = await supabase
+        .from("bills")
+        .select("*")
+        .eq("user_id", id)
+        .order("due_date", { ascending: true });
+      if (error) throw new Error(error.message);
+      return (data ?? []).map((r) => mapBill(r as Record<string, unknown>));
+    },
+    async addBills(bills: Bill[]): Promise<void> {
+      const id = await userId();
+      const rows = bills.map((b) => ({
+        id: b.id,
+        user_id: id,
+        number: b.number,
+        vendor: b.vendor,
+        issue_date: b.issueDate,
+        due_date: b.dueDate,
+        amount: b.amount,
+        currency: b.currency,
+        base_amount: b.baseAmount,
+        paid_amount: b.paidAmount,
+        status: b.status,
+        category: b.category,
+        notes: b.notes ?? null,
+      }));
+      const { error } = await supabase.from("bills").insert(rows);
+      if (error) throw new Error(error.message);
+    },
+    async updateBill(bill: Bill): Promise<void> {
+      const { error } = await supabase
+        .from("bills")
+        .update({
+          number: bill.number,
+          vendor: bill.vendor,
+          issue_date: bill.issueDate,
+          due_date: bill.dueDate,
+          amount: bill.amount,
+          currency: bill.currency,
+          base_amount: bill.baseAmount,
+          paid_amount: bill.paidAmount,
+          status: bill.status,
+          category: bill.category,
+          notes: bill.notes ?? null,
+        })
+        .eq("id", bill.id);
+      if (error) throw new Error(error.message);
+    },
+    async deleteBills(ids: string[]): Promise<void> {
+      const { error } = await supabase.from("bills").delete().in("id", ids);
       if (error) throw new Error(error.message);
     },
 

@@ -1,4 +1,5 @@
 import type {
+  Bill,
   Budget,
   CachedRates,
   Invoice,
@@ -16,6 +17,7 @@ interface Database {
   profile: Profile;
   transactions: Transaction[];
   invoices: Invoice[];
+  bills: Bill[];
   budgets: Budget[];
   schedules: ReportSchedule[];
   rates: CachedRates | null;
@@ -37,6 +39,7 @@ function load(): Database {
     profile: demo.profile,
     transactions: demo.transactions,
     invoices: demo.invoices,
+    bills: demo.bills,
     budgets: demo.budgets,
     schedules: demo.schedules,
     rates: demo.rates,
@@ -112,6 +115,25 @@ export const localStore = {
     });
   },
 
+  async getBills(): Promise<Bill[]> {
+    return clone(load().bills);
+  },
+  async addBills(bills: Bill[]): Promise<void> {
+    mutate((db) => {
+      db.bills = [...db.bills, ...bills];
+    });
+  },
+  async updateBill(bill: Bill): Promise<void> {
+    mutate((db) => {
+      db.bills = db.bills.map((b) => (b.id === bill.id ? bill : b));
+    });
+  },
+  async deleteBills(ids: string[]): Promise<void> {
+    mutate((db) => {
+      db.bills = db.bills.filter((b) => !ids.includes(b.id));
+    });
+  },
+
   async getBudgets(): Promise<Budget[]> {
     return clone(load().budgets);
   },
@@ -162,6 +184,7 @@ export const localStore = {
       profile: demo.profile,
       transactions: demo.transactions,
       invoices: demo.invoices,
+      bills: demo.bills,
       budgets: demo.budgets,
       schedules: demo.schedules,
       rates: demo.rates,

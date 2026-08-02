@@ -1,13 +1,15 @@
 import { useMemo, useState } from "react"
-import { Percent, Receipt, TrendingUp, Users } from "lucide-react"
+import { Percent, Receipt, Repeat, TrendingUp, Users } from "lucide-react"
 import { EMPTY_FILTERS, type DashboardFilters, type PeriodKey } from "@/types"
 import { dimensionValues, effectiveTransactions } from "@/lib/analytics/filter"
 import { byDimension, byMonth, computeKpis } from "@/lib/analytics/kpis"
+import { mrrByMonth, mrrDeltaByMonth, mrrSummary } from "@/lib/analytics/mrr"
 import { getPeriodRange, getPreviousRange } from "@/lib/analytics/periods"
 import { formatMoney, formatNumber, formatPercent, formatPercentPlain } from "@/lib/format"
 import { fromISODate } from "@/lib/utils"
 import { AreaTrend } from "@/components/charts/area-trend"
 import { DonutChart } from "@/components/charts/donut-chart"
+import { MrrDeltaChart } from "@/components/charts/mrr-delta-chart"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -69,6 +71,28 @@ export function RevenuePage() {
     () => byMonth(effectiveTransactions(transactions, invoices, revFilters, homeCurrency)).slice(-12),
     [transactions, invoices, revFilters, homeCurrency],
   )
+
+  const filteredTxs = useMemo(
+    () => effectiveTransactions(transactions, invoices, revFilters, homeCurrency),
+    [transactions, invoices, revFilters, homeCurrency],
+  )
+  const mrr = useMemo(() => mrrSummary(filteredTxs), [filteredTxs])
+  const mrrTrend = useMemo(
+    () =>
+      mrrByMonth(filteredTxs).map((p) => ({
+        key: p.key,
+        label: p.label,
+        revenue: p.mrr,
+        expenses: 0,
+        net: p.mrr,
+      })),
+    [filteredTxs],
+  )
+  const mrrDeltas = useMemo(() => mrrDeltaByMonth(filteredTxs), [filteredTxs])
+  const recurringShare =
+    filteredTxs.length > 0
+      ? (mrrTrend.reduce((s, p) => s + p.revenue, 0) / Math.max(1, filteredTxs.reduce((s, t) => s + t.baseAmount, 0))) * 100
+      : 0
 
   const days = useMemo(() => {
     const ms = fromISODate(range.to).getTime() - fromISODate(range.from).getTime()
@@ -141,6 +165,71 @@ export function RevenuePage() {
           icon={Users}
           sub={topClient?.name ?? "No clients"}
         />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard
+          label="MRR"
+          value={formatMoney(mrr.mrr, homeCurrency)}
+          icon={Repeat}
+          trend={{
+            value: mrr.growthPct === null ? "—" : formatPercent(mrr.growthPct),
+            positive: (mrr.growthPct ?? 0) >= 0,
+            neutral: mrr.growthPct === null,
+          }}
+          sub="recurring revenue / month"
+        />
+        <KpiCard
+          label="ARR"
+          value={formatMoney(mrr.arr, homeCurrency)}
+          icon={TrendingUp}
+          sub="annual run-rate (MRR × 12)"
+        />
+        <KpiCard
+          label="Recurring clients"
+          value={formatNumber(mrr.clientCount)}
+          icon={Users}
+          sub="contributing to MRR"
+        />
+        <KpiCard
+          label="Recurring share"
+          value={mrrTrend.length > 0 ? formatPercentPlain(recurringShare) : "—"}
+          icon={Percent}
+          sub="of total revenue (all-time)"
+        />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>MRR trend</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {mrrTrend.length === 0 ? (
+              <EmptyState
+                title="No recurring revenue"
+                description="Transactions with a subscription-like product (retainer, SaaS, support plan…) feed the MRR series."
+              />
+            ) : (
+              <AreaTrend data={mrrTrend} currency={homeCurrency} height={280} />
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>MRR movement</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {mrrDeltas.length === 0 ? (
+              <EmptyState
+                title="No recurring revenue"
+                description="Assign a client and a subscription-like product to see new, expansion, contraction and churn."
+              />
+            ) : (
+              <MrrDeltaChart data={mrrDeltas} currency={homeCurrency} height={280} />
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       <Card>

@@ -2,6 +2,7 @@ import Papa from "papaparse";
 import {
   CURRENCIES,
   type CurrencyCode,
+  type Transaction,
   type TransactionDraft,
   type TransactionType,
 } from "@/types";
@@ -121,10 +122,136 @@ const HEADER_ALIASES: Record<string, keyof TransactionDraft> = {
  * converts amounts/currencies, and infers categories/types.
  */
 export function parseTransactionsCsv(text: string): CsvParseResult {
+  const probe = Papa.parse<Record<string, string>>(text, {
+    header: true,
+    skipEmptyLines: true,
+  });
+  return parseCsvWithMapping(text, detectColumnMapping(probe.meta.fields ?? []));
+}
+
+export type CsvField =
+  | "date"
+  | "type"
+  | "description"
+  | "amount"
+  | "currency"
+  | "category"
+  | "client"
+  | "product"
+  | "region"
+  | "department"
+  | "project"
+  | "paymentMethod";
+
+export const CSV_FIELDS: CsvField[] = [
+  "date",
+  "type",
+  "description",
+  "amount",
+  "currency",
+  "category",
+  "client",
+  "product",
+  "region",
+  "department",
+  "project",
+  "paymentMethod",
+];
+
+export const FIELD_LABELS: Record<CsvField, string> = {
+  date: "Date",
+  type: "Type",
+  description: "Description",
+  amount: "Amount",
+  currency: "Currency",
+  category: "Category",
+  client: "Client",
+  product: "Product",
+  region: "Region",
+  department: "Department",
+  project: "Project",
+  paymentMethod: "Payment method",
+};
+
+/** Maps a source CSV header (lowercased, space-stripped) to a target field. */
+export interface CsvColumnMapping {
+  date: string | null;
+  type: string | null;
+  description: string | null;
+  amount: string | null;
+  currency: string | null;
+  category: string | null;
+  client: string | null;
+  product: string | null;
+  region: string | null;
+  department: string | null;
+  project: string | null;
+  paymentMethod: string | null;
+}
+
+export const EMPTY_MAPPING: CsvColumnMapping = {
+  date: null,
+  type: null,
+  description: null,
+  amount: null,
+  currency: null,
+  category: null,
+  client: null,
+  product: null,
+  region: null,
+  department: null,
+  project: null,
+  paymentMethod: null,
+};
+
+function normalizeHeader(h: string): string {
+  return h.trim().toLowerCase().replace(/\s+/g, "");
+}
+
+/**
+ * Best-effort header detection: each header matching a known alias
+ * (e.g. "Transaction date", "Memo", "Value") is assigned once.
+ */
+export function detectColumnMapping(headers: string[]): CsvColumnMapping {
+  const mapping: CsvColumnMapping = { ...EMPTY_MAPPING };
+  const used = new Set<string>();
+  for (const raw of headers) {
+    const key = normalizeHeader(raw);
+    if (used.has(key)) continue;
+    const field = HEADER_ALIASES[key] as CsvField | undefined;
+    if (field && mapping[field] === null) {
+      mapping[field] = key;
+      used.add(key);
+    }
+  }
+  return mapping;
+}
+
+/** Normalize raw date strings to YYYY-MM-DD, defaulting to today. */
+function normalizeDate(raw: string): string {
+  const v = raw.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  if (v.length === 10 && /^\d{2}[/.-]\d{2}[/.-]\d{4}$/.test(v)) {
+    const first = Number(v.slice(0, 2));
+    const second = Number(v.slice(3, 5));
+    // Day > 12 ⇒ day-first (EU); month > 12 ⇒ month-first (US); otherwise
+    // fall back to convention: dot/dash separators are EU, slash is US.
+    const dayFirst = first > 12 || (second <= 12 && (v[2] === "." || v[2] === "-"));
+    return `${v.slice(6, 10)}-${dayFirst ? v.slice(3, 5) : v.slice(0, 2)}-${dayFirst ? v.slice(0, 2) : v.slice(3, 5)}`;
+  }
+  return todayISO();
+}
+
+/**
+ * Parse CSV rows honoring an explicit column mapping. Fields left
+ * unmapped fall back to inference (description → category/type) or
+ * defaults (date → today, currency → USD).
+ */
+export function parseCsvWithMapping(text: string, mapping: CsvColumnMapping): CsvParseResult {
   const parsed = Papa.parse<Record<string, string>>(text, {
     header: true,
     skipEmptyLines: true,
-    transformHeader: (h) => h.trim().toLowerCase().replace(/\s+/g, ""),
+    transformHeader: normalizeHeader,
   });
 
   if (parsed.errors.length > 0) {
@@ -140,15 +267,14 @@ export function parseTransactionsCsv(text: string): CsvParseResult {
   const errors: string[] = [];
 
   parsed.data.forEach((row, i) => {
-    const mapped = {} as Record<keyof TransactionDraft, string | undefined>;
-    for (const [key, value] of Object.entries(row)) {
-      const field = HEADER_ALIASES[key];
-      if (field) mapped[field] = value;
-    }
+    const get = (field: CsvField): string => {
+      const key = mapping[field];
+      return key ? (row[key] ?? "") : "";
+    };
 
-    const amount = toNumber(mapped.amount ?? "");
-    const currency = mapped.currency ? parseCurrency(mapped.currency) : null;
-    const typeRaw = (mapped.type ?? "").trim().toLowerCase();
+    const amount = toNumber(get("amount"));
+    const currency = get("currency") ? parseCurrency(get("currency")) : null;
+    const typeRaw = get("type").trim().toLowerCase();
 
     if (amount === null || amount <= 0) {
       skipped++;
@@ -156,7 +282,8 @@ export function parseTransactionsCsv(text: string): CsvParseResult {
       return;
     }
 
-    const inferred = inferCategory(mapped.description ?? mapped.category ?? "");
+    const description = (get("description") || get("category") || "Imported transaction").trim();
+    const inferred = inferCategory(description || get("category"));
     const type: TransactionType =
       typeRaw === "expense" ||
       typeRaw === "expenses" ||
@@ -170,35 +297,61 @@ export function parseTransactionsCsv(text: string): CsvParseResult {
           ? "revenue"
           : inferred.type;
 
-    const description = (
-      mapped.description ??
-      mapped.category ??
-      "Imported transaction"
-    ).trim();
-    const rawDate = (mapped.date ?? "").trim();
-    const date = /^\d{4}-\d{2}-\d{2}$/.test(rawDate)
-      ? rawDate
-      : rawDate.length === 10 && /^\d{2}[/-]\d{2}[/-]\d{4}$/.test(rawDate)
-        ? `${rawDate.slice(6, 10)}-${rawDate.slice(0, 2)}-${rawDate.slice(3, 5)}`
-        : todayISO();
-
     transactions.push({
-      date,
+      date: normalizeDate(get("date")),
       type,
       description: description || "Imported transaction",
       amount,
       currency: currency ?? "USD",
-      category: (mapped.category ?? inferred.category).trim() || "Other",
-      product: mapped.product || undefined,
-      client: mapped.client || undefined,
-      region: mapped.region || undefined,
-      department: mapped.department || undefined,
-      project: mapped.project || undefined,
-      paymentMethod: mapped.paymentMethod || undefined,
+      category: get("category").trim() || inferred.category || "Other",
+      product: get("product") || undefined,
+      client: get("client") || undefined,
+      region: get("region") || undefined,
+      department: get("department") || undefined,
+      project: get("project") || undefined,
+      paymentMethod: get("paymentMethod") || undefined,
     });
   });
 
   return { transactions, skipped, errors };
+}
+
+function draftSignature(d: {
+  date: string;
+  description: string;
+  amount: number;
+  currency: string;
+}): string {
+  return [d.date, d.description.trim().toLowerCase(), d.amount.toFixed(4), d.currency].join("|");
+}
+
+export interface DedupeResult {
+  kept: TransactionDraft[];
+  duplicates: TransactionDraft[];
+}
+
+/**
+ * Drop rows that already exist (same date, description, amount, currency)
+ * either in the imported batch or in the current dataset. Uses an additive
+ * seen-set so repeated rows within one file are also deduplicated.
+ */
+export function dedupeTransactions(
+  drafts: TransactionDraft[],
+  existing: Array<Pick<Transaction, "date" | "description" | "amount" | "currency">>,
+): DedupeResult {
+  const seen = new Set<string>(existing.map(draftSignature));
+  const kept: TransactionDraft[] = [];
+  const duplicates: TransactionDraft[] = [];
+  for (const d of drafts) {
+    const sig = draftSignature(d);
+    if (seen.has(sig)) {
+      duplicates.push(d);
+    } else {
+      seen.add(sig);
+      kept.push(d);
+    }
+  }
+  return { kept, duplicates };
 }
 
 /** Build a CSV template string users can download before importing. */

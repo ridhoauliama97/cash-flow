@@ -117,6 +117,31 @@ export type ScheduleDraft = Omit<
   "id" | "lastSentAt" | "nextRunAt"
 >;
 
+export const BILL_STATUSES = ["unpaid", "partial", "paid"] as const;
+export type BillStatus = (typeof BILL_STATUSES)[number];
+
+/** Accounts payable: a vendor bill the business owes. */
+export interface Bill {
+  id: string;
+  number: string;
+  vendor: string;
+  issueDate: string;
+  dueDate: string;
+  amount: number; // original currency
+  currency: CurrencyCode;
+  baseAmount: number; // converted to home currency
+  paidAmount: number; // in base currency
+  status: BillStatus;
+  category: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export type BillDraft = Omit<
+  Bill,
+  "id" | "baseAmount" | "createdAt" | "status" | "paidAmount"
+>;
+
 export interface Profile {
   id: string;
   name: string;
@@ -184,6 +209,7 @@ export interface Database {
   profile: Profile;
   transactions: Transaction[];
   invoices: Invoice[];
+  bills: Bill[];
   budgets: Budget[];
   schedules: ReportSchedule[];
   rates: CachedRates;

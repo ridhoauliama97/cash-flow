@@ -1,4 +1,5 @@
-import { Filter, Search, X } from "lucide-react"
+import { useState } from "react"
+import { Bookmark, BookmarkCheck, Filter, Save, Search, Trash2, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,6 +18,7 @@ import {
 import type { DashboardFilters, TransactionType } from "@/types"
 import { cn } from "@/lib/utils"
 import { EMPTY_FILTERS } from "@/types"
+import { useSavedViews } from "@/hooks/use-saved-views"
 
 export interface FilterOptions {
   categories: string[]
@@ -73,6 +75,82 @@ function DimSelect({
         ))}
       </SelectContent>
     </Select>
+  )
+}
+
+/** Dropdown to save the current filter combination and re-apply presets. */
+function SavedViewsMenu({
+  filters,
+  onChange,
+}: {
+  filters: DashboardFilters
+  onChange: (f: DashboardFilters) => void
+}) {
+  const { views, saveCurrent, remove, activeViewId } = useSavedViews()
+  const [name, setName] = useState("")
+  const active = activeViewId(filters)
+
+  const handleSave = () => {
+    if (!name.trim()) return
+    saveCurrent(name, filters)
+    setName("")
+  }
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
+          <Bookmark className="size-3.5" />
+          Saved views
+          {views.length > 0 && <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">{views.length}</Badge>}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 p-3" align="end">
+        <div className="flex items-center gap-2">
+          <Input
+            className="h-8 text-xs"
+            placeholder="Name this view…"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSave()}
+          />
+          <Button variant="default" size="sm" className="h-8 gap-1 text-xs" onClick={handleSave} disabled={!name.trim()}>
+            <Save className="size-3.5" />
+            Save
+          </Button>
+        </div>
+        <div className="mt-3 space-y-1">
+          {views.length === 0 && (
+            <p className="px-1 text-xs text-muted-foreground">No saved views yet — apply filters and save them here.</p>
+          )}
+          {views.map((v) => (
+            <div
+              key={v.id}
+              className={cn(
+                "group flex items-center gap-2 rounded-md px-2 py-1.5 text-xs",
+                v.id === active ? "bg-primary/10 text-primary" : "hover:bg-muted",
+              )}
+            >
+              <button
+                className="flex flex-1 items-center gap-1.5 truncate text-left font-medium"
+                onClick={() => onChange({ ...v.filters })}
+                title={`Apply “${v.name}”`}
+              >
+                {v.id === active ? <BookmarkCheck className="size-3.5 shrink-0" /> : <Bookmark className="size-3.5 shrink-0 text-muted-foreground" />}
+                <span className="truncate">{v.name}</span>
+              </button>
+              <button
+                className="text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+                onClick={() => remove(v.id)}
+                title="Delete view"
+              >
+                <Trash2 className="size-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
   )
 }
 
@@ -166,6 +244,7 @@ export function FilterBar({
           />
         </div>
         <div className="ml-auto flex items-center gap-1.5">
+          <SavedViewsMenu filters={filters} onChange={onChange} />
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="h-8 text-xs">

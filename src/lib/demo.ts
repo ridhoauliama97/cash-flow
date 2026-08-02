@@ -1,4 +1,4 @@
-import type { Budget, CachedRates, Database, Invoice, ReportSchedule, Transaction } from "@/types"
+import type { Bill, Budget, CachedRates, Database, Invoice, ReportSchedule, Transaction } from "@/types"
 import { fallbackRates } from "@/lib/currency"
 import { mulberry32, shiftDays, toISODate } from "@/lib/utils"
 import { DEMO_END, DEMO_START } from "@/lib/csv"
@@ -228,13 +228,59 @@ export function generateDemoData(profile: DemoProfileConfig = { name: "Alex Morg
     openingBalance: 85_000_000, // Rp 85M starting cash
   }
 
+  // Bills (AP): ~9 across aging buckets, mirroring the invoice structure.
+  const bills: Bill[] = []
+  const billRand = mulberry32(20260802)
+  const billPick = <T,>(arr: T[]): T => arr[Math.floor(billRand() * arr.length)]
+  const billRnd = (min: number, max: number) => min + billRand() * (max - min)
+  const VENDORS = ["AWS", "Figma", "Notion", "Google Ads", "Coworking Space", "Freelance Dev", "Mailchimp", "Slack"]
+  const BILL_CATEGORIES = ["Software & Subscriptions", "Marketing & Ads", "Office & Supplies", "Contractors", "Utilities"]
+
+  const billBuckets: Array<{ dueOffset: number; paid: boolean; base: number }> = []
+  for (let i = 0; i < 3; i++) {
+    billBuckets.push({ dueOffset: -billRnd(0, 25), paid: billRnd(0, 1) > 0.6, base: 1 })
+  }
+  for (let i = 0; i < 3; i++) {
+    billBuckets.push({ dueOffset: -billRnd(26, 55), paid: false, base: 1 })
+  }
+  for (let i = 0; i < 3; i++) {
+    billBuckets.push({ dueOffset: -billRnd(56, 110), paid: false, base: 1 })
+  }
+
+  billBuckets.forEach((b, i) => {
+    const issue = shiftDays(todayIso, b.dueOffset - billRnd(5, 20))
+    const due = shiftDays(todayIso, b.dueOffset)
+    const currency = billRnd(0, 1) > 0.6 ? "USD" : "EUR"
+    const amount = Math.round(billRnd(100, 3500))
+    const rate = rates.rates[currency]
+    const baseAmount = Math.round(amount / rate)
+    const paidAmount = b.paid ? baseAmount : 0
+    bills.push({
+      id: `bill-${i}`,
+      number: `BILL-${String(200 + i)}`,
+      vendor: billPick(VENDORS),
+      issueDate: issue,
+      dueDate: due,
+      amount,
+      currency,
+      baseAmount,
+      paidAmount,
+      status: b.paid ? "paid" : "unpaid",
+      category: billPick(BILL_CATEGORIES),
+      notes: undefined,
+      createdAt: issue,
+    })
+  })
+
   const sortedTx = transactions.toSorted((a, b) => a.date.localeCompare(b.date))
   const sortedInvoices = invoices.toSorted((a, b) => a.dueDate.localeCompare(b.dueDate))
+  const sortedBills = bills.toSorted((a, b) => a.dueDate.localeCompare(b.dueDate))
 
   return {
     profile: demoProfile,
     transactions: sortedTx,
     invoices: sortedInvoices,
+    bills: sortedBills,
     budgets,
     schedules,
     rates: { ...rates, fetchedAt: new Date().toISOString() } as CachedRates,
@@ -253,10 +299,11 @@ export function demoMonthKeys(): string[] {
 }
 
 /** Compact but realistic summary of the demo dataset (for the import page). */
-export function demoSummary(): { transactions: number; invoices: number; period: string } {
+export function demoSummary(): { transactions: number; invoices: number; bills: number; period: string } {
   return {
     transactions: 150,
     invoices: 17,
+    bills: 9,
     period: `${DEMO_START} → ${DEMO_END}`,
   }
 }

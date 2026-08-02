@@ -58,15 +58,34 @@ export function KpiCard({ label, value, sub, icon: Icon, trend, hint, className 
 }
 
 /** Simple labeled stat row for cards. */
-export function StatRow({ label, value, icon }: { label: ReactNode; value: ReactNode; icon?: LucideIcon }) {
+export function StatRow({
+  label,
+  value,
+  icon,
+  hint,
+}: {
+  label: ReactNode
+  value: ReactNode
+  icon?: LucideIcon
+  hint?: string
+}) {
   const Icon = icon
-  return (
-    <div className="flex items-center justify-between py-1.5 text-sm">
-      <span className="flex items-center gap-2 text-muted-foreground">
-        {Icon && <Icon className="size-3.5" />}
-        {label}
+  const content = (
+    <div className="flex items-center justify-between gap-3 py-1.5 text-sm">
+      <span className="flex min-w-0 items-center gap-2 text-muted-foreground">
+        {Icon && <Icon className="size-3.5 shrink-0" />}
+        <span className="truncate">{label}</span>
       </span>
-      <span className="font-medium tabular-nums">{value}</span>
+      <span className="shrink-0 font-medium tabular-nums">{value}</span>
     </div>
+  )
+  if (!hint) return content
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>{content}</TooltipTrigger>
+        <TooltipContent>{hint}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   )
 }

@@ -1,4 +1,5 @@
 import type {
+  Bill,
   Budget,
   CachedRates,
   Invoice,
@@ -22,6 +23,10 @@ export interface Store {
   addInvoices(invs: Invoice[]): Promise<void>
   updateInvoice(inv: Invoice): Promise<void>
   deleteInvoices(ids: string[]): Promise<void>
+  getBills(): Promise<Bill[]>
+  addBills(bills: Bill[]): Promise<void>
+  updateBill(bill: Bill): Promise<void>
+  deleteBills(ids: string[]): Promise<void>
   getBudgets(): Promise<Budget[]>
   upsertBudgets(budgets: Budget[]): Promise<void>
   deleteBudgets(ids: string[]): Promise<void>
