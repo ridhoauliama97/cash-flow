@@ -124,12 +124,7 @@ export function TransactionManager({
           <Label htmlFor="txn-filter-status">Status</Label>
           <Select
             value={statusFilter}
-            onValueChange={(v) => {
-              setStatusFilter((prev) => [
-                ...prev.filter((f) => f.id !== "status"),
-                ...(v && v !== "semua" ? [{ id: "status", value: v }] : []),
-              ]);
-            }}
+            onValueChange={(v) => setStatusFilter(v ?? "")}
           >
             <SelectTrigger className="h-8 w-40" aria-label="Filter status">
               <SelectValue placeholder="Semua status" />
