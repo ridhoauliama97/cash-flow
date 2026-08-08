@@ -128,6 +128,7 @@ export async function createSchedule(
 
     const { error } = await db().then((s) =>
       s.from("schedules").insert({
+        id: crypto.randomUUID(),
         name: input.name.trim(),
         report_type: input.reportType,
         frequency: input.frequency,

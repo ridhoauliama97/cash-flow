@@ -55,6 +55,7 @@ export async function createCoa(input: CoaInput): Promise<ActionResult> {
 
     const { error } = await db().then((s) =>
       s.from("chart_of_accounts").insert({
+        id: crypto.randomUUID(),
         code: input.code.trim(),
         name: input.name.trim(),
         type: input.type,

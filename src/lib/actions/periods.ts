@@ -84,6 +84,7 @@ export async function createPeriod(input: {
       s
         .from("accounting_periods")
         .insert({
+        id: crypto.randomUUID(),
           start_date: input.startDate,
           end_date: input.endDate,
           status: "open",

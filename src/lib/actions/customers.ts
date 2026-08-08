@@ -54,6 +54,7 @@ export async function createCustomer(input: CustomerInput): Promise<ActionResult
 
     const { error } = await db().then((s) =>
       s.from("customers").insert({
+        id: crypto.randomUUID(),
         name: input.name.trim(),
         contact_info: input.contactInfo?.trim() || null,
       } as never),

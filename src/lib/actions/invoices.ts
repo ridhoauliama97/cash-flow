@@ -151,6 +151,7 @@ export async function createInvoice(input: {
       s
         .from("invoices")
         .insert({
+        id: crypto.randomUUID(),
           type: input.type,
           number,
           customer_id: input.type === "receivable" ? input.customerId : null,

@@ -110,6 +110,7 @@ export async function createEmployee(
 
     const { error } = await db().then((s) =>
       s.from("employees").insert({
+        id: crypto.randomUUID(),
         name: input.name.trim(),
         email: input.email?.trim() || null,
         user_id: input.userId || null,

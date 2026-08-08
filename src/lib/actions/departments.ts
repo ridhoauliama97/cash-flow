@@ -81,6 +81,7 @@ export async function createDepartment(
 
     const { error } = await db().then((s) =>
       s.from("departments").insert({
+        id: crypto.randomUUID(),
         name: input.name.trim(),
         division_id: input.divisionId,
       } as never),

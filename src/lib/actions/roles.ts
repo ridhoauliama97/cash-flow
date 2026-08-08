@@ -112,6 +112,7 @@ export async function createRole(input: RoleInput): Promise<ActionResult> {
 
     const { error } = await db().then((s) =>
       s.from("roles").insert({
+        id: crypto.randomUUID(),
         name: input.name.trim(),
         level: input.level,
         division_id: input.divisionId,

@@ -56,6 +56,7 @@ export async function createSupplier(
 
     const { error } = await db().then((s) =>
       s.from("suppliers").insert({
+        id: crypto.randomUUID(),
         name: input.name.trim(),
         contact_info: input.contactInfo.trim() || null,
       } as never),

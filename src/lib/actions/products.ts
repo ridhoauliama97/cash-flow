@@ -93,6 +93,7 @@ export async function createProduct(input: ProductInput): Promise<ActionResult> 
 
     const { error } = await db().then((s) =>
       s.from("products").insert({
+        id: crypto.randomUUID(),
         name: input.name.trim(),
         description: input.description?.trim() || null,
         sku: input.sku?.trim() || null,
