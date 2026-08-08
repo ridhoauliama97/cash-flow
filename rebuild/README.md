@@ -46,3 +46,6 @@ src/
 - Generator tipe baru `prisma-client` → output `src/generated/prisma` (gitignored).
 - Build scripts Prisma di-approve via `allowBuilds` di `pnpm-workspace.yaml` — jangan dihapus.
 - `pnpm-workspace.yaml` root repo TIDAK boleh dimodifikasi (bukan workspace).
+- **Semua tabel rebuild ada di schema `accounting`** (bukan `public`) — `public` dipakai app Vite lama di project Supabase yang sama (`transactions`, `invoices`, `bills`, dll). Jangan membuat tabel di `public`.
+- `@@check` (constraint) tidak didukung Prisma 7 → check constraints ditulis manual sebagai SQL di akhir migration.
+- `prisma migrate deploy` dari kosong bisa gagal `P3005` (database berisi tabel app lama) → aplikasikan via `prisma db execute --file <migration>` lalu `prisma migrate resolve --applied <name>` (sudah tercatat, cukup untuk kasus baru yang serupa).

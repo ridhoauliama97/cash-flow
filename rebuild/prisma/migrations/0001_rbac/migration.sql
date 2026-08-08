@@ -1,9 +1,8 @@
-
 -- CreateSchema
-CREATE SCHEMA IF NOT EXISTS "public";
+CREATE SCHEMA IF NOT EXISTS "accounting";
 
 -- CreateTable
-CREATE TABLE "users" (
+CREATE TABLE "accounting"."users" (
     "id" UUID NOT NULL,
     "email" TEXT NOT NULL,
     "name" TEXT,
@@ -15,7 +14,7 @@ CREATE TABLE "users" (
 );
 
 -- CreateTable
-CREATE TABLE "divisions" (
+CREATE TABLE "accounting"."divisions" (
     "id" UUID NOT NULL,
     "name" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -24,7 +23,7 @@ CREATE TABLE "divisions" (
 );
 
 -- CreateTable
-CREATE TABLE "roles" (
+CREATE TABLE "accounting"."roles" (
     "id" UUID NOT NULL,
     "name" TEXT NOT NULL,
     "level" TEXT NOT NULL,
@@ -35,7 +34,7 @@ CREATE TABLE "roles" (
 );
 
 -- CreateTable
-CREATE TABLE "permissions" (
+CREATE TABLE "accounting"."permissions" (
     "id" UUID NOT NULL,
     "module" TEXT NOT NULL,
     "action" TEXT NOT NULL,
@@ -44,7 +43,7 @@ CREATE TABLE "permissions" (
 );
 
 -- CreateTable
-CREATE TABLE "role_permissions" (
+CREATE TABLE "accounting"."role_permissions" (
     "role_id" UUID NOT NULL,
     "permission_id" UUID NOT NULL,
 
@@ -52,7 +51,7 @@ CREATE TABLE "role_permissions" (
 );
 
 -- CreateTable
-CREATE TABLE "user_roles" (
+CREATE TABLE "accounting"."user_roles" (
     "user_id" UUID NOT NULL,
     "role_id" UUID NOT NULL,
 
@@ -60,107 +59,99 @@ CREATE TABLE "user_roles" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+CREATE UNIQUE INDEX "users_email_key" ON "accounting"."users"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "divisions_name_key" ON "divisions"("name");
+CREATE UNIQUE INDEX "divisions_name_key" ON "accounting"."divisions"("name");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "roles_name_key" ON "roles"("name");
+CREATE UNIQUE INDEX "roles_name_key" ON "accounting"."roles"("name");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "permissions_module_action_key" ON "permissions"("module", "action");
+CREATE UNIQUE INDEX "permissions_module_action_key" ON "accounting"."permissions"("module", "action");
 
 -- AddForeignKey
-ALTER TABLE "users" ADD CONSTRAINT "users_division_id_fkey" FOREIGN KEY ("division_id") REFERENCES "divisions"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "accounting"."users" ADD CONSTRAINT "users_division_id_fkey" FOREIGN KEY ("division_id") REFERENCES "accounting"."divisions"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "roles" ADD CONSTRAINT "roles_division_id_fkey" FOREIGN KEY ("division_id") REFERENCES "divisions"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "accounting"."roles" ADD CONSTRAINT "roles_division_id_fkey" FOREIGN KEY ("division_id") REFERENCES "accounting"."divisions"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "role_permissions" ADD CONSTRAINT "role_permissions_role_id_fkey" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "accounting"."role_permissions" ADD CONSTRAINT "role_permissions_role_id_fkey" FOREIGN KEY ("role_id") REFERENCES "accounting"."roles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "role_permissions" ADD CONSTRAINT "role_permissions_permission_id_fkey" FOREIGN KEY ("permission_id") REFERENCES "permissions"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "accounting"."role_permissions" ADD CONSTRAINT "role_permissions_permission_id_fkey" FOREIGN KEY ("permission_id") REFERENCES "accounting"."permissions"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "user_roles" ADD CONSTRAINT "user_roles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "accounting"."user_roles" ADD CONSTRAINT "user_roles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "accounting"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "user_roles" ADD CONSTRAINT "user_roles_role_id_fkey" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "accounting"."user_roles" ADD CONSTRAINT "user_roles_role_id_fkey" FOREIGN KEY ("role_id") REFERENCES "accounting"."roles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 
 -- ============================================================================
--- RLS: semua tabel RBAC diaktifkan. Auth via Supabase (auth.uid()).
--- Helper: is_admin() — admin/superadmin bisa kelola role & permission.
+-- RLS + integrasi auth (schema accounting, terpisah dari public milik app lama)
 -- ============================================================================
 
-create or replace function public.is_admin() returns boolean
-language sql stable security definer set search_path = public as $$
+create or replace function accounting.is_admin() returns boolean
+language sql stable security definer set search_path = accounting as $$
   select exists (
     select 1
-    from public.user_roles ur
-    join public.roles r on r.id = ur.role_id
+    from user_roles ur
+    join roles r on r.id = ur.role_id
     where ur.user_id = auth.uid()
       and r.level in ('admin', 'superadmin')
   );
 $$;
 
-alter table public.users enable row level security;
-alter table public.divisions enable row level security;
-alter table public.roles enable row level security;
-alter table public.permissions enable row level security;
-alter table public.role_permissions enable row level security;
-alter table public.user_roles enable row level security;
+alter table accounting.users enable row level security;
+alter table accounting.divisions enable row level security;
+alter table accounting.roles enable row level security;
+alter table accounting.permissions enable row level security;
+alter table accounting.role_permissions enable row level security;
+alter table accounting.user_roles enable row level security;
 
--- users: baca baris sendiri atau admin; update hanya baris sendiri (profil).
-create policy "users: select own or admin" on public.users
-  for select using (auth.uid() = id or public.is_admin());
-create policy "users: update own" on public.users
+create policy "users: select own or admin" on accounting.users
+  for select using (auth.uid() = id or accounting.is_admin());
+create policy "users: update own" on accounting.users
   for update using (auth.uid() = id) with check (auth.uid() = id);
 
--- divisions / roles / permissions: baca untuk semua authenticated, tulis admin.
-create policy "divisions: select authenticated" on public.divisions
+create policy "divisions: select authenticated" on accounting.divisions
   for select to authenticated using (true);
-create policy "divisions: admin write" on public.divisions
-  for all using (public.is_admin()) with check (public.is_admin());
+create policy "divisions: admin write" on accounting.divisions
+  for all using (accounting.is_admin()) with check (accounting.is_admin());
 
-create policy "roles: select authenticated" on public.roles
+create policy "roles: select authenticated" on accounting.roles
   for select to authenticated using (true);
-create policy "roles: admin write" on public.roles
-  for all using (public.is_admin()) with check (public.is_admin());
+create policy "roles: admin write" on accounting.roles
+  for all using (accounting.is_admin()) with check (accounting.is_admin());
 
-create policy "permissions: select authenticated" on public.permissions
+create policy "permissions: select authenticated" on accounting.permissions
   for select to authenticated using (true);
-create policy "permissions: admin write" on public.permissions
-  for all using (public.is_admin()) with check (public.is_admin());
+create policy "permissions: admin write" on accounting.permissions
+  for all using (accounting.is_admin()) with check (accounting.is_admin());
 
--- role_permissions / user_roles: baca untuk semua authenticated, tulis admin.
-create policy "role_permissions: select authenticated" on public.role_permissions
+create policy "role_permissions: select authenticated" on accounting.role_permissions
   for select to authenticated using (true);
-create policy "role_permissions: admin write" on public.role_permissions
-  for all using (public.is_admin()) with check (public.is_admin());
+create policy "role_permissions: admin write" on accounting.role_permissions
+  for all using (accounting.is_admin()) with check (accounting.is_admin());
 
-create policy "user_roles: select authenticated" on public.user_roles
+create policy "user_roles: select authenticated" on accounting.user_roles
   for select to authenticated using (true);
-create policy "user_roles: admin write" on public.user_roles
-  for all using (public.is_admin()) with check (public.is_admin());
+create policy "user_roles: admin write" on accounting.user_roles
+  for all using (accounting.is_admin()) with check (accounting.is_admin());
 
--- ============================================================================
--- Integrasi auth: users.id mereferensikan auth.users(id) dan profil dibuat
--- otomatis saat signup (pola repo lama: supabase/migrations/0001_init.sql).
--- ============================================================================
-
-alter table public.users add constraint users_auth_user_fk
+-- users.id mengikuti auth.users; profil dibuat otomatis saat signup.
+alter table accounting.users add constraint users_auth_user_fk
   foreign key (id) references auth.users (id) on delete cascade;
 
-create or replace function public.handle_new_user()
+create or replace function accounting.handle_new_user()
 returns trigger
 language plpgsql
-security definer set search_path = public
+security definer set search_path = accounting
 as $$
 begin
-  insert into public.users (id, email, name)
+  insert into users (id, email, name)
   values (new.id, new.email, coalesce(new.raw_user_meta_data ->> 'full_name', new.email))
   on conflict (id) do nothing;
   return new;
@@ -170,4 +161,4 @@ $$;
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
-  for each row execute function public.handle_new_user();
+  for each row execute function accounting.handle_new_user();

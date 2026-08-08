@@ -10,6 +10,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  schemas  = ["accounting"]
 }
 
 /// Profil user; id mengikuti auth.users (Supabase Auth).
@@ -22,7 +23,10 @@ model User {
   divisionId String?    @map("division_id") @db.Uuid
   division   Division?  @relation(fields: [divisionId], references: [id], onDelete: SetNull)
   roles      UserRole[]
+  transactions Transaction[] @relation("TransactionCreator")
+  approvals  Approval[]
 
+  @@schema("accounting")
   @@map("users")
 }
 
@@ -34,6 +38,7 @@ model Division {
   roles     Role[]
   costCenters CostCenter[]
 
+  @@schema("accounting")
   @@map("divisions")
 }
 
@@ -48,6 +53,7 @@ model Role {
   users      UserRole[]
   permissions RolePermission[]
 
+  @@schema("accounting")
   @@map("roles")
 }
 
@@ -59,6 +65,7 @@ model Permission {
   roles  RolePermission[]
 
   @@unique([module, action])
+  @@schema("accounting")
   @@map("permissions")
 }
 
@@ -69,6 +76,7 @@ model RolePermission {
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@id([roleId, permissionId])
+  @@schema("accounting")
   @@map("role_permissions")
 }
 
@@ -79,6 +87,7 @@ model UserRole {
   role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@id([userId, roleId])
+  @@schema("accounting")
   @@map("user_roles")
 }
 
@@ -96,10 +105,12 @@ model ChartOfAccount {
   parentId  String?           @map("parent_id") @db.Uuid
   parent    ChartOfAccount?   @relation("CoaHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
   children  ChartOfAccount[]  @relation("CoaHierarchy")
+  journalEntries JournalEntry[]
   createdAt DateTime          @default(now()) @map("created_at")
 
   @@unique([code])
   @@index([parentId])
+  @@schema("accounting")
   @@map("chart_of_accounts")
 }
 
@@ -109,6 +120,7 @@ model Customer {
   contactInfo String?  @map("contact_info")
   createdAt   DateTime @default(now()) @map("created_at")
 
+  @@schema("accounting")
   @@map("customers")
 }
 
@@ -118,6 +130,7 @@ model Supplier {
   contactInfo String?  @map("contact_info")
   createdAt   DateTime @default(now()) @map("created_at")
 
+  @@schema("accounting")
   @@map("suppliers")
 }
 
@@ -128,7 +141,97 @@ model CostCenter {
   divisionId String?  @map("division_id") @db.Uuid
   division   Division? @relation(fields: [divisionId], references: [id], onDelete: SetNull)
   createdAt  DateTime @default(now()) @map("created_at")
+  transactions Transaction[]
 
   @@unique([code])
+  @@schema("accounting")
   @@map("cost_centers")
+}
+
+// ============================================================================
+// Transaksi & Buku Besar (PRD §5.3–5.4)
+// ============================================================================
+
+model AccountingPeriod {
+  id        String   @id @default(uuid()) @db.Uuid
+  startDate DateTime @map("start_date")
+  endDate   DateTime @map("end_date")
+  status    String   @default("open") // open | closed
+  closedBy  String?  @map("closed_by") @db.Uuid
+  closedAt  DateTime? @map("closed_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  transactions Transaction[]
+
+  @@index([status])
+  @@schema("accounting")
+  @@map("accounting_periods")
+}
+
+/// Multi-currency: amount = mata uang asli, base_amount = konversi ke IDR
+/// dengan rate_snapshot saat transaksi dibuat (laporan historis konsisten).
+model Transaction {
+  id        String   @id @default(uuid()) @db.Uuid
+  type      String // income | expense (Fase 1)
+  date      DateTime
+  description String
+  amount    Decimal // mata uang asli
+  currency  String
+  baseAmount Decimal @map("base_amount")
+  rateSnapshot Decimal @map("rate_snapshot")
+  costCenterId String? @map("cost_center_id") @db.Uuid
+  costCenter CostCenter? @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
+  createdBy String @map("created_by") @db.Uuid
+  createdByUser User? @relation("TransactionCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  status    String   @default("pending") // draft | pending | approved | rejected
+  accountingPeriodId String? @map("accounting_period_id") @db.Uuid
+  accountingPeriod AccountingPeriod? @relation(fields: [accountingPeriodId], references: [id], onDelete: Restrict)
+  source    String   @default("manual")
+  createdAt DateTime @default(now()) @map("created_at")
+  journalEntries JournalEntry[]
+  approvals  Approval[]
+
+  @@index([date, status])
+  @@index([accountingPeriodId])
+  @@index([createdBy])
+  @@index([costCenterId])
+  @@index([currency])
+  @@schema("accounting")
+  @@map("transactions")
+}
+
+model JournalEntry {
+  id          String   @id @default(uuid()) @db.Uuid
+  transactionId String @map("transaction_id") @db.Uuid
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  accountId   String   @map("account_id") @db.Uuid
+  account     ChartOfAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  debit       Decimal  @default(0)
+  credit      Decimal  @default(0)
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([accountId])
+  @@index([transactionId])
+  @@schema("accounting")
+  @@map("journal_entries")
+}
+
+/// Workflow approval penuh di Fase 2; tabel dibuat di Fase 1.
+/// level: 1 = kepala, 2 = direktur. status: approved | rejected.
+model Approval {
+  id          String   @id @default(uuid()) @db.Uuid
+  transactionId String @map("transaction_id") @db.Uuid
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  approverId  String   @map("approver_id") @db.Uuid
+  approver    User     @relation(fields: [approverId], references: [id], onDelete: Restrict)
+  level       Int
+  status      String
+  note        String?
+  approvedAt  DateTime @map("approved_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([transactionId])
+  @@index([approverId])
+  @@schema("accounting")
+  @@map("approvals")
 }
