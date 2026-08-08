@@ -31,13 +31,13 @@ export async function listDivisions(): Promise<ActionResult<DivisionRow[]>> {
   try {
     await requirePermission("user", "read");
     const { data, error } = await db().then((s) =>
-      s.from("divisions").select("id, name, users(user_id)").order("name"),
+      s.from("divisions").select("id, name, users(id)").order("name"),
     );
     if (error) return { ok: false, error: error.message };
     const rows = (data ?? []) as unknown as Array<{
       id: string;
       name: string;
-      users: Array<{ user_id: string }> | null;
+      users: Array<{ id: string }> | null;
     }>;
     return {
       ok: true,
