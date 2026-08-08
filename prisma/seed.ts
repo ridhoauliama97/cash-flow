@@ -59,6 +59,7 @@ const PERMISSION_MATRIX: Array<{ role: string; permissions: Array<[Module, Actio
       ["report", "read"],
       ["report", "print"],
       ["report", "export"],
+      ["period", "read"],
       ["period", "approve"],
     ],
   },
@@ -77,6 +78,7 @@ const PERMISSION_MATRIX: Array<{ role: string; permissions: Array<[Module, Actio
       ["report", "read"],
       ["report", "print"],
       ["report", "export"],
+      ["period", "read"],
     ],
   },
   {

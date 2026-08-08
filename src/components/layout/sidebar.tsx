@@ -7,6 +7,7 @@ import {
   BarChart3,
   Building2,
   CalendarClock,
+  CalendarRange,
   FileDown,
   FileText,
   FolderTree,
@@ -101,6 +102,12 @@ const NAV_ITEMS = [
     label: "Settings",
     icon: Settings,
     permission: ["user", "read"] as const,
+  },
+  {
+    to: "/settings/periods",
+    label: "Periode",
+    icon: CalendarRange,
+    permission: ["period", "read"] as const,
   },
 ];
 
