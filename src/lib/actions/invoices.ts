@@ -162,6 +162,8 @@ export async function createInvoice(input: {
           status: "draft",
           due_date: input.dueDate,
           created_by: user.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         } as never)
         .select("id")
         .single(),

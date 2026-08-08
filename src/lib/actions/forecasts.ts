@@ -85,6 +85,7 @@ export async function createForecast(
     const { error } = await db().then((s) =>
       s.from("forecasts").upsert(
         {
+          id: crypto.randomUUID(),
           year: input.year,
           month: input.month,
           category: input.category,
@@ -123,6 +124,7 @@ export async function updateForecast(
       s
         .from("forecasts")
         .update({
+          id: crypto.randomUUID(),
           year: input.year,
           month: input.month,
           category: input.category,
