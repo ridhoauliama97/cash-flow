@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useState } from "react";
 import {
   ArrowDownUp,
   BarChart3,
@@ -25,107 +24,37 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import {
+  SidebarMenu,
+  SidebarSubMenu,
+  type SidebarMenuItemData,
+} from "@/components/ui/sidebar-menu";
 
-const NAV_ITEMS = [
-  {
-    to: "/",
-    label: "Overview",
-    icon: LayoutDashboard,
-    permission: ["dashboard", "read"] as const,
-  },
-  {
-    to: "/analytics/revenue",
-    label: "Revenue",
-    icon: BarChart3,
-    permission: ["analytics", "read"] as const,
-  },
-  {
-    to: "/analytics/expenses",
-    label: "Expenses",
-    icon: Wallet,
-    permission: ["analytics", "read"] as const,
-  },
-  {
-    to: "/analytics/profitability",
-    label: "Profitability",
-    icon: TrendingUp,
-    permission: ["analytics", "read"] as const,
-  },
-  {
-    to: "/analytics/cash-flow",
-    label: "Cash Flow",
-    icon: LineChart,
-    permission: ["analytics", "read"] as const,
-  },
-  {
-    to: "/analytics/receivables",
-    label: "Receivable & Payable",
-    icon: PiggyBank,
-    permission: ["analytics", "read"] as const,
-  },
-  {
-    to: "/transactions",
-    label: "Transactions",
-    icon: ArrowDownUp,
-    permission: ["transaction", "read"] as const,
-  },
-  {
-    to: "/approvals",
-    label: "Approvals",
-    icon: ClipboardCheck,
-    permission: ["transaction", "approve"] as const,
-  },
-  {
-    to: "/master/chart-of-accounts",
-    label: "Master Data",
-    icon: FolderTree,
-    permission: ["master-data", "read"] as const,
-  },
-  {
-    to: "/analytics/forecast",
-    label: "Forecast",
-    icon: CalendarClock,
-    permission: ["analytics", "read"] as const,
-  },
-  {
-    to: "/reports/journal",
-    label: "Journal / General Ledger",
-    icon: FileText,
-    permission: ["ledger", "read"] as const,
-  },
-  {
-    to: "/analytics/import",
-    label: "Import Data",
-    icon: Upload,
-    permission: ["import", "read"] as const,
-  },
-  {
-    to: "/analytics/schedules",
-    label: "Schedules",
-    icon: FileDown,
-    permission: ["schedule", "read"] as const,
-  },
-  {
-    to: "/settings/users",
-    label: "Settings",
-    icon: Settings,
-    permission: ["user", "read"] as const,
-  },
-  {
-    to: "/settings/periods",
-    label: "Periode",
-    icon: CalendarRange,
-    permission: ["period", "read"] as const,
-  },
+const NAV_ITEMS: SidebarMenuItemData[] = [
+  { to: "/", label: "Overview", icon: LayoutDashboard, permission: ["dashboard", "read"] },
+  { to: "/analytics/revenue", label: "Revenue", icon: BarChart3, permission: ["analytics", "read"] },
+  { to: "/analytics/expenses", label: "Expenses", icon: Wallet, permission: ["analytics", "read"] },
+  { to: "/analytics/profitability", label: "Profitability", icon: TrendingUp, permission: ["analytics", "read"] },
+  { to: "/analytics/cash-flow", label: "Cash Flow", icon: LineChart, permission: ["analytics", "read"] },
+  { to: "/analytics/receivables", label: "Receivable & Payable", icon: PiggyBank, permission: ["analytics", "read"] },
+  { to: "/transactions", label: "Transactions", icon: ArrowDownUp, permission: ["transaction", "read"] },
+  { to: "/approvals", label: "Approvals", icon: ClipboardCheck, permission: ["transaction", "approve"] },
+  { to: "/master/chart-of-accounts", label: "Master Data", icon: FolderTree, permission: ["master-data", "read"] },
+  { to: "/analytics/forecast", label: "Forecast", icon: CalendarClock, permission: ["analytics", "read"] },
+  { to: "/reports/journal", label: "Journal / General Ledger", icon: FileText, permission: ["ledger", "read"] },
+  { to: "/analytics/import", label: "Import Data", icon: Upload, permission: ["import", "read"] },
+  { to: "/analytics/schedules", label: "Schedules", icon: FileDown, permission: ["schedule", "read"] },
+  { to: "/settings/users", label: "Settings", icon: Settings, permission: ["user", "read"] },
+  { to: "/settings/periods", label: "Periode", icon: CalendarRange, permission: ["period", "read"] },
 ];
 
-const MASTER_SUB = [
-  { to: "/master/customers", label: "Customers", icon: Users, permission: ["master-data", "read"] as const },
-  { to: "/master/suppliers", label: "Suppliers", icon: Truck, permission: ["master-data", "read"] as const },
-  { to: "/master/products", label: "Products", icon: Package, permission: ["master-data", "read"] as const },
-  { to: "/settings/departments", label: "Departments", icon: Building2, permission: ["user", "read"] as const },
-  { to: "/settings/divisions", label: "Divisions", icon: FolderTree, permission: ["user", "read"] as const },
-  { to: "/settings/employees", label: "Employees", icon: Users, permission: ["user", "read"] as const },
+const MASTER_SUB: SidebarMenuItemData[] = [
+  { to: "/master/customers", label: "Customers", icon: Users, permission: ["master-data", "read"] },
+  { to: "/master/suppliers", label: "Suppliers", icon: Truck, permission: ["master-data", "read"] },
+  { to: "/master/products", label: "Products", icon: Package, permission: ["master-data", "read"] },
+  { to: "/settings/departments", label: "Departments", icon: Building2, permission: ["user", "read"] },
+  { to: "/settings/divisions", label: "Divisions", icon: FolderTree, permission: ["user", "read"] },
+  { to: "/settings/employees", label: "Employees", icon: Users, permission: ["user", "read"] },
 ];
 
 type NavPermission = readonly [module: string, action: string];
@@ -143,7 +72,7 @@ export function Sidebar({
   onClose: () => void;
   allowed: string[];
 }) {
-  const pathname = usePathname();
+  const [masterOpen, setMasterOpen] = useState(true);
 
   return (
     <>
@@ -171,54 +100,35 @@ export function Sidebar({
           </div>
         </div>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-          {NAV_ITEMS.filter(({ permission }) =>
-            hasPermission(allowed, permission),
-          ).map(({ to, label, icon: Icon }) => {
-            const active =
-              to === "/" ? pathname === "/" : pathname.startsWith(to);
-            const subActive =
-              to === "/master/chart-of-accounts" &&
-              MASTER_SUB.some((s) => pathname.startsWith(s.to));
+        <div className="flex-1 overflow-y-auto p-3">
+          <SidebarMenu
+            items={NAV_ITEMS.filter(({ permission }) =>
+              hasPermission(allowed, permission),
+            )}
+            onClose={onClose}
+          />
 
-            return (
-              <div key={to}>
-                <Link
-                  href={to}
-                  onClick={onClose}
-                  className={cn(
-                    "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                    active || subActive
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
-                  )}
-                >
-                  <Icon className="size-4 shrink-0" />
-                  {label}
-                </Link>
-                {to === "/master/chart-of-accounts" &&
-                  MASTER_SUB.filter((sub) =>
-                    hasPermission(allowed, sub.permission),
-                  ).map((sub) => (
-                    <Link
-                      key={sub.to}
-                      href={sub.to}
-                      onClick={onClose}
-                      className={cn(
-                        "flex items-center gap-3 rounded-md py-1.5 pl-11 pr-3 text-sm font-medium transition-colors",
-                        pathname.startsWith(sub.to)
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                          : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
-                      )}
-                    >
-                      <sub.icon className="size-3.5 shrink-0" />
-                      {sub.label}
-                    </Link>
-                  ))}
-              </div>
-            );
-          })}
-        </nav>
+          {hasPermission(allowed, ["master-data", "read"]) && (
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={() => setMasterOpen(!masterOpen)}
+                className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-sidebar-accent-foreground"
+              >
+                <FolderTree className="size-3.5 shrink-0" />
+                Master Data
+                <span className="ml-auto text-[10px]">{masterOpen ? "▾" : "▸"}</span>
+              </button>
+              {masterOpen && (
+                <SidebarSubMenu
+                  items={MASTER_SUB}
+                  allowed={allowed}
+                  onClose={onClose}
+                />
+              )}
+            </div>
+          )}
+        </div>
 
         <div className="border-t border-sidebar-border p-3">
           <ThemeToggle />
