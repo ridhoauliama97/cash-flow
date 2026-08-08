@@ -32,6 +32,7 @@ model Division {
   createdAt DateTime @default(now()) @map("created_at")
   users     User[]
   roles     Role[]
+  costCenters CostCenter[]
 
   @@map("divisions")
 }
@@ -79,4 +80,55 @@ model UserRole {
 
   @@id([userId, roleId])
   @@map("user_roles")
+}
+
+// ============================================================================
+// Master data (PRD §5.2)
+// ============================================================================
+
+/// Chart of accounts hierarkis. type: asset/liability/equity/revenue/expense
+/// (union di src/types/master-data.ts). parent dihapus => ditolak jika punya child.
+model ChartOfAccount {
+  id        String            @id @default(uuid()) @db.Uuid
+  code      String
+  name      String
+  type      String
+  parentId  String?           @map("parent_id") @db.Uuid
+  parent    ChartOfAccount?   @relation("CoaHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children  ChartOfAccount[]  @relation("CoaHierarchy")
+  createdAt DateTime          @default(now()) @map("created_at")
+
+  @@unique([code])
+  @@index([parentId])
+  @@map("chart_of_accounts")
+}
+
+model Customer {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  contactInfo String?  @map("contact_info")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("customers")
+}
+
+model Supplier {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  contactInfo String?  @map("contact_info")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("suppliers")
+}
+
+model CostCenter {
+  id         String   @id @default(uuid()) @db.Uuid
+  code       String
+  name       String
+  divisionId String?  @map("division_id") @db.Uuid
+  division   Division? @relation(fields: [divisionId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([code])
+  @@map("cost_centers")
 }

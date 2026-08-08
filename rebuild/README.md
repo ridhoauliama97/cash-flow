@@ -27,6 +27,8 @@ export SUPABASE_ACCESS_TOKEN="<sbp_ token>"   # token tersimpan di ~/.supabase/a
 
 > Project sudah ter-link (ref `uyygrpyylyzqlqjguikx`, project yang sama dengan app Vite lama). Saat `db push`, jangan beri flag `--project-ref` — akan error.
 
+> **Koneksi DB**: selalu pakai pooler `aws-0-ap-southeast-1.pooler.supabase.com:5432` — host direct `db.<ref>.supabase.co` hanya resolve IPv6 (gagal `P1001` di jaringan tanpa IPv6).
+
 ## Struktur (berjalan)
 
 ```
