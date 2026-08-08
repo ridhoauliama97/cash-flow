@@ -1,6 +1,9 @@
 "use client";
 
-import { Menu } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { LogOut, Menu } from "lucide-react";
+
+import { signOut } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 
 export interface TopbarUser {
@@ -15,6 +18,14 @@ export function Topbar({
   onMenuClick: () => void;
   user: TopbarUser;
 }) {
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/login");
+    router.refresh();
+  };
+
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b bg-background/95 px-4 backdrop-blur no-print lg:px-6">
       <div className="flex items-center gap-3">
@@ -34,6 +45,15 @@ export function Topbar({
           </p>
         </div>
       </div>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={handleSignOut}
+        aria-label="Keluar"
+        title="Keluar"
+      >
+        <LogOut className="size-5" />
+      </Button>
     </header>
   );
 }
