@@ -8,6 +8,7 @@ import {
   Building2,
   CalendarClock,
   CalendarRange,
+  ClipboardCheck,
   FileDown,
   FileText,
   FolderTree,
@@ -66,6 +67,12 @@ const NAV_ITEMS = [
     label: "Transactions",
     icon: ArrowDownUp,
     permission: ["transaction", "read"] as const,
+  },
+  {
+    to: "/approvals",
+    label: "Approvals",
+    icon: ClipboardCheck,
+    permission: ["transaction", "approve"] as const,
   },
   {
     to: "/master/chart-of-accounts",

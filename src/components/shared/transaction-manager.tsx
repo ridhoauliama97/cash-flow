@@ -20,6 +20,7 @@ import {
   TRANSACTION_TYPE_LABELS,
 } from "@/components/shared/transactions-table";
 import { deleteTransaction } from "@/lib/actions/transactions";
+import { submitForApproval } from "@/lib/actions/approvals";
 import type { TransactionRow } from "@/lib/actions/transactions";
 import type { CostCenterRow } from "@/lib/cost-centers";
 import type { TransactionStatus } from "@/types/ledger";
@@ -61,6 +62,17 @@ export function TransactionManager({
       return;
     }
     toast.success("Transaksi dihapus");
+    router.refresh();
+  }
+
+  async function handleSubmit(row: TransactionRow) {
+    if (!confirm(`Ajukan transaksi "${row.description}" untuk persetujuan?`)) return;
+    const res = await submitForApproval(row.id);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
+    toast.success("Transaksi diajukan");
     router.refresh();
   }
 
@@ -126,7 +138,7 @@ export function TransactionManager({
         </div>
       </div>
 
-      <TransactionsTable rows={filteredRows} onDelete={handleDelete} onEdit={openEdit} />
+      <TransactionsTable rows={filteredRows} onDelete={handleDelete} onEdit={openEdit} onSubmit={handleSubmit} />
 
       <TransactionFormDialog
         key={editing ? `edit-${editing.id}` : "create"}

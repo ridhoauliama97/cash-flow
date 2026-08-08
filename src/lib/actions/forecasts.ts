@@ -1,7 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requirePermission, requireCanModifyData, PermissionError } from "@/lib/rbac";
+import {
+  requirePermission,
+  requireCanModifyData,
+  PermissionError,
+} from "@/lib/rbac";
 import { createClient } from "@/lib/supabase/server";
 
 export type ActionResult<T = undefined> =
@@ -37,7 +41,8 @@ async function db() {
 function guardErr(e: unknown): string {
   if (e instanceof PermissionError) return e.message;
   const msg = e instanceof Error ? e.message : String(e);
-  if (msg.includes("23505")) return "Forecast untuk bulan/kategori ini sudah ada";
+  if (msg.includes("23505"))
+    return "Forecast untuk bulan/kategori ini sudah ada";
   return msg;
 }
 
@@ -69,14 +74,19 @@ export async function listForecasts(): Promise<ActionResult<ForecastRow[]>> {
   }
 }
 
-export async function createForecast(input: ForecastInput): Promise<ActionResult> {
+export async function createForecast(
+  input: ForecastInput,
+): Promise<ActionResult> {
   try {
     await requirePermission("dashboard", "create");
     if (input.month < 1 || input.month > 12) {
       return { ok: false, error: "Bulan harus 1–12" };
     }
     if (!["revenue", "expense", "profit"].includes(input.category)) {
-      return { ok: false, error: "Kategori harus revenue, expense, atau profit" };
+      return {
+        ok: false,
+        error: "Kategori harus revenue, expense, atau profit",
+      };
     }
 
     const { error } = await db().then((s) =>
@@ -110,7 +120,10 @@ export async function updateForecast(
       return { ok: false, error: "Bulan harus 1–12" };
     }
     if (!["revenue", "expense", "profit"].includes(input.category)) {
-      return { ok: false, error: "Kategori harus revenue, expense, atau profit" };
+      return {
+        ok: false,
+        error: "Kategori harus revenue, expense, atau profit",
+      };
     }
 
     const { error } = await db().then((s) =>
@@ -141,7 +154,10 @@ export async function deleteForecast(id: string): Promise<ActionResult> {
       s.from("forecasts").select("id, created_by").eq("id", id),
     );
     if (fetchErr) return { ok: false, error: fetchErr.message };
-    const row = (data?.[0] ?? null) as { id: string; created_by: string } | null;
+    const row = (data?.[0] ?? null) as {
+      id: string;
+      created_by: string;
+    } | null;
     if (!row) return { ok: false, error: "Forecast tidak ditemukan" };
     await requireCanModifyData(row.created_by);
     const { error } = await db().then((s) =>

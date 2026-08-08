@@ -30,8 +30,6 @@ export interface DivisionRow {
   name: string;
 }
 
-
-
 const PATH = "/settings/roles";
 
 async function db() {
@@ -94,7 +92,10 @@ export async function listDivisions(): Promise<ActionResult<DivisionRow[]>> {
     if (error) return { ok: false, error: error.message };
     return {
       ok: true,
-      data: (data ?? []).map((r) => ({ id: r.id as string, name: r.name as string })),
+      data: (data ?? []).map((r) => ({
+        id: r.id as string,
+        name: r.name as string,
+      })),
     };
   } catch (e) {
     return { ok: false, error: guardErr(e) };
@@ -139,7 +140,9 @@ export async function updateRole(
     const invalid = validateRole(input);
     if (invalid) return { ok: false, error: invalid };
 
-    const { data: rows } = await db().then((s) => s.from("roles").select("id, name"));
+    const { data: rows } = await db().then((s) =>
+      s.from("roles").select("id, name"),
+    );
     const target = (rows ?? []).find((r) => r.id === id);
     if (!target) return { ok: false, error: "Role tidak ditemukan" };
     if (target.name === SUPER_ADMIN_ROLE_NAME) {
@@ -170,7 +173,9 @@ export async function updateRole(
 export async function deleteRole(id: string): Promise<ActionResult> {
   try {
     await requirePermission("user", "delete");
-    const { data: rows } = await db().then((s) => s.from("roles").select("id, name"));
+    const { data: rows } = await db().then((s) =>
+      s.from("roles").select("id, name"),
+    );
     const target = (rows ?? []).find((r) => r.id === id);
     if (!target) return { ok: false, error: "Role tidak ditemukan" };
     if (target.name === SUPER_ADMIN_ROLE_NAME) {
@@ -181,10 +186,15 @@ export async function deleteRole(id: string): Promise<ActionResult> {
       s.from("user_roles").select("user_id").eq("role_id", id),
     );
     if (members && members.length > 0) {
-      return { ok: false, error: "Role masih dipakai oleh user — lepas dulu role-nya" };
+      return {
+        ok: false,
+        error: "Role masih dipakai oleh user — lepas dulu role-nya",
+      };
     }
 
-    const { error } = await db().then((s) => s.from("roles").delete().eq("id", id));
+    const { error } = await db().then((s) =>
+      s.from("roles").delete().eq("id", id),
+    );
     if (error) return { ok: false, error: guardErr(error) };
     revalidatePath(PATH);
     return { ok: true };

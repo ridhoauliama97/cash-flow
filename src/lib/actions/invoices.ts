@@ -32,7 +32,13 @@ export interface InvoiceRow {
 
 const PATH = "/analytics/receivables";
 
-const INVOICE_STATUSES = ["draft", "sent", "paid", "overdue", "cancelled"] as const;
+const INVOICE_STATUSES = [
+  "draft",
+  "sent",
+  "paid",
+  "overdue",
+  "cancelled",
+] as const;
 
 interface DbRow {
   id: string;
@@ -220,7 +226,10 @@ export async function deleteInvoice(id: string): Promise<ActionResult> {
       s.from("invoices").select("id, created_by").eq("id", id),
     );
     if (fetchErr) return { ok: false, error: fetchErr.message };
-    const row = (data?.[0] ?? null) as { id: string; created_by: string } | null;
+    const row = (data?.[0] ?? null) as {
+      id: string;
+      created_by: string;
+    } | null;
     if (!row) return { ok: false, error: "Invoice tidak ditemukan" };
     await requireCanModifyData(row.created_by);
     const { error } = await db().then((s) =>
@@ -240,7 +249,9 @@ export async function setInvoiceStatus(
 ): Promise<ActionResult> {
   try {
     await requirePermission("analytics", "update");
-    if (!INVOICE_STATUSES.includes(status as (typeof INVOICE_STATUSES)[number])) {
+    if (
+      !INVOICE_STATUSES.includes(status as (typeof INVOICE_STATUSES)[number])
+    ) {
       return { ok: false, error: "Status tidak valid" };
     }
     const update: Record<string, unknown> = { status };
@@ -250,7 +261,10 @@ export async function setInvoiceStatus(
       update.paid_at = null;
     }
     const { error } = await db().then((s) =>
-      s.from("invoices").update(update as never).eq("id", id),
+      s
+        .from("invoices")
+        .update(update as never)
+        .eq("id", id),
     );
     if (error) return { ok: false, error: guardErr(error) };
     revalidatePath(PATH);

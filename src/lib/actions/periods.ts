@@ -2,9 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import {
-  requirePermission,
-} from "@/lib/rbac";
+import { requirePermission } from "@/lib/rbac";
 import { createClient } from "@/lib/supabase/server";
 
 export type ActionResult<T = undefined> =
@@ -62,7 +60,9 @@ export async function listPeriods(): Promise<ActionResult<PeriodRow[]>> {
     const { data, error } = await db().then((s) =>
       s
         .from("accounting_periods")
-        .select("id, start_date, end_date, status, closed_by, closed_at, created_at")
+        .select(
+          "id, start_date, end_date, status, closed_by, closed_at, created_at",
+        )
         .order("start_date", { ascending: false }),
     );
     if (error) return { ok: false, error: error.message };
@@ -92,7 +92,9 @@ export async function createPeriod(input: {
           end_date: input.endDate,
           status: "open",
         } as never)
-        .select("id, start_date, end_date, status, closed_by, closed_at, created_at")
+        .select(
+          "id, start_date, end_date, status, closed_by, closed_at, created_at",
+        )
         .single(),
     );
     if (error) return { ok: false, error: guardErr(error) };

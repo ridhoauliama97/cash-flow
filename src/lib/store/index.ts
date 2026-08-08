@@ -13,7 +13,8 @@ export function resolveStoreMode(): StoreMode {
   return url && anonKey ? "supabase" : "local";
 }
 
-let browserClientSingleton: ReturnType<typeof createBrowserClient> | null = null;
+let browserClientSingleton: ReturnType<typeof createBrowserClient> | null =
+  null;
 
 /** Browser Supabase client (auth, RLS-scoped rows). null di mode local. */
 export function getSupabaseBrowserClient() {

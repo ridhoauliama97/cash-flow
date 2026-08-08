@@ -57,11 +57,16 @@ export async function listDivisions(): Promise<ActionResult<DivisionRow[]>> {
 }
 
 /** List semua cost center (flat). */
-export async function listCostCenters(): Promise<ActionResult<CostCenterRow[]>> {
+export async function listCostCenters(): Promise<
+  ActionResult<CostCenterRow[]>
+> {
   try {
     await requirePermission("master-data", "read");
     const { data, error } = await db().then((s) =>
-      s.from("cost_centers").select("id, code, name, division_id").order("code"),
+      s
+        .from("cost_centers")
+        .select("id, code, name, division_id")
+        .order("code"),
     );
     if (error) return { ok: false, error: error.message };
     return { ok: true, data: (data ?? []).map(toRow) };
@@ -70,7 +75,9 @@ export async function listCostCenters(): Promise<ActionResult<CostCenterRow[]>> 
   }
 }
 
-export async function createCostCenter(input: CostCenterInput): Promise<ActionResult> {
+export async function createCostCenter(
+  input: CostCenterInput,
+): Promise<ActionResult> {
   try {
     await requirePermission("master-data", "create");
     const invalid = validateCostCenter(input);
@@ -137,10 +144,15 @@ export async function deleteCostCenter(id: string): Promise<ActionResult> {
     );
     if (countError) return { ok: false, error: countError.message };
     if (count !== null && count > 0) {
-      return { ok: false, error: "Cost center sudah dipakai di transaksi — tidak bisa dihapus" };
+      return {
+        ok: false,
+        error: "Cost center sudah dipakai di transaksi — tidak bisa dihapus",
+      };
     }
 
-    const { error } = await db().then((s) => s.from("cost_centers").delete().eq("id", id));
+    const { error } = await db().then((s) =>
+      s.from("cost_centers").delete().eq("id", id),
+    );
     if (error) return { ok: false, error: guardErr(error) };
     revalidatePath(PATH);
     return { ok: true };

@@ -34,16 +34,25 @@ function guardErr(e: unknown): string {
   return msg;
 }
 
-export async function getPermissionMatrix(): Promise<ActionResult<PermissionMatrix>> {
+export async function getPermissionMatrix(): Promise<
+  ActionResult<PermissionMatrix>
+> {
   try {
     await requirePermission("user", "read");
     const s = await db();
-    const [{ data: perms, error: permErr }, { data: roles, error: roleErr }, { data: rps, error: rpErr }] =
-      await Promise.all([
-        s.from("permissions").select("id, module, action").order("module").order("action"),
-        s.from("roles").select("id, name, level").order("name"),
-        s.from("role_permissions").select("role_id, permission_id"),
-      ]);
+    const [
+      { data: perms, error: permErr },
+      { data: roles, error: roleErr },
+      { data: rps, error: rpErr },
+    ] = await Promise.all([
+      s
+        .from("permissions")
+        .select("id, module, action")
+        .order("module")
+        .order("action"),
+      s.from("roles").select("id, name, level").order("name"),
+      s.from("role_permissions").select("role_id, permission_id"),
+    ]);
     if (permErr) return { ok: false, error: permErr.message };
     if (roleErr) return { ok: false, error: roleErr.message };
     if (rpErr) return { ok: false, error: rpErr.message };
@@ -82,19 +91,33 @@ export async function setRolePermissions(
   try {
     await requirePermission("user", "update");
     const s = await db();
-    const { data: rows } = await s.from("roles").select("name").eq("id", roleId);
+    const { data: rows } = await s
+      .from("roles")
+      .select("name")
+      .eq("id", roleId);
     const role = (rows ?? [])[0];
     if (!role) return { ok: false, error: "Role tidak ditemukan" };
     if (role.name === SUPER_ADMIN_ROLE_NAME) {
-      return { ok: false, error: "Permission Super Admin tidak bisa diubah dari UI" };
+      return {
+        ok: false,
+        error: "Permission Super Admin tidak bisa diubah dari UI",
+      };
     }
 
-    const { error: delErr } = await s.from("role_permissions").delete().eq("role_id", roleId);
+    const { error: delErr } = await s
+      .from("role_permissions")
+      .delete()
+      .eq("role_id", roleId);
     if (delErr) return { ok: false, error: delErr.message };
     if (permissionIds.length > 0) {
-      const { error: insErr } = await s.from("role_permissions").insert(
-        permissionIds.map((permissionId) => ({ role_id: roleId, permission_id: permissionId })) as never,
-      );
+      const { error: insErr } = await s
+        .from("role_permissions")
+        .insert(
+          permissionIds.map((permissionId) => ({
+            role_id: roleId,
+            permission_id: permissionId,
+          })) as never,
+        );
       if (insErr) return { ok: false, error: guardErr(insErr) };
     }
     revalidatePath(PATH);

@@ -1,7 +1,15 @@
 // Ledger types — NO TS enums (erasableSyntaxOnly): const arrays + unions.
 // Nilai disimpan sebagai string/number di DB; validasi di aplikasi.
 
-export const CURRENCIES = ["IDR", "USD", "EUR", "GBP", "JPY", "AUD", "SGD"] as const;
+export const CURRENCIES = [
+  "IDR",
+  "USD",
+  "EUR",
+  "GBP",
+  "JPY",
+  "AUD",
+  "SGD",
+] as const;
 export type Currency = (typeof CURRENCIES)[number];
 
 /// Fase 1: hanya income/expense (sale/purchase menyusul di fase berikutnya).

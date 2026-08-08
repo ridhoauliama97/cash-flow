@@ -1,7 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requirePermission, requireCanModifyData, PermissionError } from "@/lib/rbac";
+import {
+  requirePermission,
+  requireCanModifyData,
+  PermissionError,
+} from "@/lib/rbac";
 import { createClient } from "@/lib/supabase/server";
 
 export type ActionResult<T = undefined> =
@@ -112,7 +116,8 @@ function validateSchedule(input: ScheduleInput): string | null {
     return "Tanggal bulanan harus 1-31";
   if (input.frequency === "weekly" && input.dayOfWeek === null)
     return "Hari mingguan wajib dipilih";
-  if (!["pdf", "csv", "xlsx"].includes(input.format)) return "Format tidak valid";
+  if (!["pdf", "csv", "xlsx"].includes(input.format))
+    return "Format tidak valid";
   return null;
 }
 

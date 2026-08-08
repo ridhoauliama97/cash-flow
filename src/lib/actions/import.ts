@@ -131,12 +131,21 @@ function parseCsvLine(line: string): string[] {
 function validateRow(
   values: string[],
   rowNum: number,
-): { type: string; date: Date; description: string; amount: number; currency: string } | string {
+):
+  | {
+      type: string;
+      date: Date;
+      description: string;
+      amount: number;
+      currency: string;
+    }
+  | string {
   const [dateStr, type, description, amountStr, currency] = values;
 
   if (!dateStr) return `Baris ${rowNum}: tanggal kosong`;
   const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return `Baris ${rowNum}: format tanggal tidak valid "${dateStr}"`;
+  if (isNaN(date.getTime()))
+    return `Baris ${rowNum}: format tanggal tidak valid "${dateStr}"`;
 
   const normalizedType = type?.toLowerCase();
   if (normalizedType !== "income" && normalizedType !== "expense") {
@@ -210,7 +219,8 @@ export async function processImport(
       const rowNum = i + 2;
       const values = parseCsvLine(dataLines[i]!);
 
-      const getValue = (idx: number) => (idx >= 0 && idx < values.length ? values[idx]! : "");
+      const getValue = (idx: number) =>
+        idx >= 0 && idx < values.length ? values[idx]! : "";
       const rowValues = [
         getValue(dateIdx),
         getValue(typeIdx),
@@ -271,7 +281,12 @@ export async function processImport(
     revalidatePath(PATH);
     return {
       ok: true,
-      data: { batchId, totalRows, successRows: successCount, errorRows: errorCount },
+      data: {
+        batchId,
+        totalRows,
+        successRows: successCount,
+        errorRows: errorCount,
+      },
     };
   } catch (e) {
     return { ok: false, error: guardErr(e) };
@@ -285,7 +300,10 @@ export async function deleteImportBatch(id: string): Promise<ActionResult> {
       s.from("import_batches").select("id, created_by").eq("id", id),
     );
     if (error) return { ok: false, error: error.message };
-    const row = (data?.[0] ?? null) as { id: string; created_by: string } | null;
+    const row = (data?.[0] ?? null) as {
+      id: string;
+      created_by: string;
+    } | null;
     if (!row) return { ok: false, error: "Batch import tidak ditemukan" };
     await requireCanModifyData(row.created_by);
     const { error: delError } = await db().then((s) =>

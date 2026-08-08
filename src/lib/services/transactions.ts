@@ -122,8 +122,10 @@ export async function createTransaction(
       ),
       db().then((s) => s.from("cost_centers").select("id")),
     ]);
-    if (periodsRes.error) return { ok: false, error: guardErr(periodsRes.error) };
-    if (costCentersRes.error) return { ok: false, error: guardErr(costCentersRes.error) };
+    if (periodsRes.error)
+      return { ok: false, error: guardErr(periodsRes.error) };
+    if (costCentersRes.error)
+      return { ok: false, error: guardErr(costCentersRes.error) };
 
     const periodRows = (periodsRes.data ?? []) as Array<{
       id: string;
@@ -138,7 +140,10 @@ export async function createTransaction(
       ((costCentersRes.data ?? []) as Array<{ id: string }>).map((c) => c.id),
     );
 
-    const invalid = validateTransactionDraft(draft, { openPeriods, costCenterIds });
+    const invalid = validateTransactionDraft(draft, {
+      openPeriods,
+      costCenterIds,
+    });
     if (invalid) return { ok: false, error: invalid };
 
     // Kurs live (bila CURRENCYAPI_KEY ada) atau static fallback, base IDR.
@@ -198,7 +203,8 @@ export async function updateTransaction(
         .eq("status", "open")
         .order("start_date", { ascending: true }),
     );
-    if (periodsRes.error) return { ok: false, error: guardErr(periodsRes.error) };
+    if (periodsRes.error)
+      return { ok: false, error: guardErr(periodsRes.error) };
     const periodRows = (periodsRes.data ?? []) as Array<{
       id: string;
       start_date: string;
@@ -209,13 +215,19 @@ export async function updateTransaction(
       endDate: p.end_date,
     }));
 
-    const costCentersRes = await db().then((s) => s.from("cost_centers").select("id"));
-    if (costCentersRes.error) return { ok: false, error: guardErr(costCentersRes.error) };
+    const costCentersRes = await db().then((s) =>
+      s.from("cost_centers").select("id"),
+    );
+    if (costCentersRes.error)
+      return { ok: false, error: guardErr(costCentersRes.error) };
     const costCenterIds = new Set(
       ((costCentersRes.data ?? []) as Array<{ id: string }>).map((c) => c.id),
     );
 
-    const invalid = validateTransactionDraft(update, { openPeriods, costCenterIds });
+    const invalid = validateTransactionDraft(update, {
+      openPeriods,
+      costCenterIds,
+    });
     if (invalid) return { ok: false, error: invalid };
 
     const { error: ownerErr } = await db().then((s) =>

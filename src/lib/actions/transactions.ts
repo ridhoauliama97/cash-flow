@@ -7,7 +7,11 @@ import {
   requirePermission,
 } from "@/lib/rbac";
 import { createClient } from "@/lib/supabase/server";
-import { createTransaction, updateTransaction, type TransactionDraft } from "@/lib/services/transactions";
+import {
+  createTransaction,
+  updateTransaction,
+  type TransactionDraft,
+} from "@/lib/services/transactions";
 import type {
   Currency,
   TransactionStatus,
@@ -87,7 +91,9 @@ function guardErr(e: unknown): string {
  * Nested select memakai relasi FK (cost_centers, users) seperti resolveRoles;
  * baris yang di-filter RLS (mis. nama user lain untuk staff) jadi null.
  */
-export async function listTransactions(): Promise<ActionResult<TransactionRow[]>> {
+export async function listTransactions(): Promise<
+  ActionResult<TransactionRow[]>
+> {
   try {
     await requirePermission("transaction", "read");
     const { data, error } = await db().then((s) =>
@@ -137,7 +143,10 @@ export async function deleteTransaction(id: string): Promise<ActionResult> {
     } | null;
     if (!row) return { ok: false, error: "Transaksi tidak ditemukan" };
     if (row.status !== "draft") {
-      return { ok: false, error: "Hanya transaksi berstatus draft yang bisa dihapus" };
+      return {
+        ok: false,
+        error: "Hanya transaksi berstatus draft yang bisa dihapus",
+      };
     }
     // Super admin protection: data milik Super Admin hanya bisa dihapus
     // oleh Super Admin (guard service layer, meniru trigger DB).

@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { requirePermission, PermissionError } from "@/lib/rbac";
 import { createClient } from "@/lib/supabase/server";
-import { validateSupplier, type SupplierInput, type SupplierRow } from "@/lib/suppliers";
+import {
+  validateSupplier,
+  type SupplierInput,
+  type SupplierRow,
+} from "@/lib/suppliers";
 
 export type ActionResult<T = undefined> =
   | { ok: true; data?: T }
@@ -45,7 +49,9 @@ export async function listSuppliers(): Promise<ActionResult<SupplierRow[]>> {
   }
 }
 
-export async function createSupplier(input: SupplierInput): Promise<ActionResult> {
+export async function createSupplier(
+  input: SupplierInput,
+): Promise<ActionResult> {
   try {
     await requirePermission("master-data", "create");
     const invalid = validateSupplier(input);
@@ -97,7 +103,9 @@ export async function deleteSupplier(id: string): Promise<ActionResult> {
     // Catatan: tabel transactions TIDAK punya kolom supplier_id — tidak ada
     // cek "supplier sudah dipakai" yang mungkin dilakukan; error FK (jika
     // muncul di masa depan) diserahkan sebagai pesan error apa adanya.
-    const { error } = await db().then((s) => s.from("suppliers").delete().eq("id", id));
+    const { error } = await db().then((s) =>
+      s.from("suppliers").delete().eq("id", id),
+    );
     if (error) return { ok: false, error: guardErr(error) };
     revalidatePath(PATH);
     return { ok: true };

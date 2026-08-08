@@ -111,7 +111,9 @@ export function isBalanced(entries: readonly JournalEntryDraft[]): boolean {
 // datasource url). Konstruksi ditunda sampai pemakaian pertama agar modul
 // tetap aman diimpor unit test (yang hanya memakai bagian PURE) dan tidak
 // bocor koneksi saat dev hot-reload.
-const globalForPrisma = globalThis as unknown as { ledgerPrisma?: PrismaClient };
+const globalForPrisma = globalThis as unknown as {
+  ledgerPrisma?: PrismaClient;
+};
 
 function getPrisma(): PrismaClient {
   if (!globalForPrisma.ledgerPrisma) {
@@ -171,7 +173,9 @@ export async function postJournal(
     }
 
     const rows = await prisma.chartOfAccount.findMany({
-      where: { code: { in: [CODE_CASH, CODE_BANK, CODE_REVENUE, CODE_EXPENSE] } },
+      where: {
+        code: { in: [CODE_CASH, CODE_BANK, CODE_REVENUE, CODE_EXPENSE] },
+      },
       select: { id: true, code: true },
     });
     const byCode = new Map(rows.map((r) => [r.code, r.id] as const));

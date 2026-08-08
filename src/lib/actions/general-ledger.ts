@@ -143,7 +143,10 @@ export async function getGeneralLedger(
     for (const r of raw) {
       if (r.account) accountById.set(r.account_id, r.account);
     }
-    const accounts = [...accountById.entries()].map(([id, a]) => ({ id, ...a }));
+    const accounts = [...accountById.entries()].map(([id, a]) => ({
+      id,
+      ...a,
+    }));
 
     const rows = computeGlRows(entries, accounts);
     return { ok: true, data: { rows, totals: glTotals(rows) } };

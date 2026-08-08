@@ -50,7 +50,9 @@ export async function listUsers(): Promise<ActionResult<UserRow[]>> {
       is_active: boolean;
       division_id: string | null;
       divisions: { name: string } | null;
-      user_roles: Array<{ roles: { id: string; name: string; level: string } | null }> | null;
+      user_roles: Array<{
+        roles: { id: string; name: string; level: string } | null;
+      }> | null;
     }>;
     return {
       ok: true,
@@ -63,7 +65,9 @@ export async function listUsers(): Promise<ActionResult<UserRow[]>> {
         divisionName: r.divisions?.name ?? null,
         roles: (r.user_roles ?? [])
           .map((ur) => ur.roles)
-          .filter((x): x is { id: string; name: string; level: string } => x !== null),
+          .filter(
+            (x): x is { id: string; name: string; level: string } => x !== null,
+          ),
       })),
     };
   } catch (e) {
@@ -80,12 +84,20 @@ export async function setUserRoles(
     await requirePermission("user", "update");
     await requireCanModifyData(userId); // data milik Super Admin tidak bisa diubah role lain
     const s = await db();
-    const { error: delErr } = await s.from("user_roles").delete().eq("user_id", userId);
+    const { error: delErr } = await s
+      .from("user_roles")
+      .delete()
+      .eq("user_id", userId);
     if (delErr) return { ok: false, error: delErr.message };
     if (roleIds.length > 0) {
-      const { error: insErr } = await s.from("user_roles").insert(
-        roleIds.map((roleId) => ({ user_id: userId, role_id: roleId })) as never,
-      );
+      const { error: insErr } = await s
+        .from("user_roles")
+        .insert(
+          roleIds.map((roleId) => ({
+            user_id: userId,
+            role_id: roleId,
+          })) as never,
+        );
       if (insErr) return { ok: false, error: guardErr(insErr) };
     }
     revalidatePath(PATH);
@@ -103,7 +115,10 @@ export async function setUserActive(
     await requirePermission("user", "update");
     await requireCanModifyData(userId);
     const { error } = await db().then((s) =>
-      s.from("users").update({ is_active: isActive } as never).eq("id", userId),
+      s
+        .from("users")
+        .update({ is_active: isActive } as never)
+        .eq("id", userId),
     );
     if (error) return { ok: false, error: error.message };
     revalidatePath(PATH);

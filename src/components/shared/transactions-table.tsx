@@ -43,9 +43,10 @@ export interface TransactionsTableProps {
   rows: TransactionRow[];
   onDelete: (row: TransactionRow) => void;
   onEdit: (row: TransactionRow) => void;
+  onSubmit: (row: TransactionRow) => void;
 }
 
-export function TransactionsTable({ rows, onDelete, onEdit }: TransactionsTableProps) {
+export function TransactionsTable({ rows, onDelete, onEdit, onSubmit }: TransactionsTableProps) {
   return (
     <div className="rounded-xl border bg-card">
       <Table>
@@ -124,6 +125,13 @@ export function TransactionsTable({ rows, onDelete, onEdit }: TransactionsTableP
                           onClick={() => onEdit(row)}
                         >
                           Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onSubmit(row)}
+                        >
+                          Ajukan
                         </Button>
                         <Button
                           variant="ghost"
