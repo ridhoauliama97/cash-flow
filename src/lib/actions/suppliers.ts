@@ -55,7 +55,8 @@ export async function createSupplier(
     if (invalid) return { ok: false, error: invalid };
 
     const { error } = await db().then((s) =>
-      s.from("suppliers").insert({
+      s.from("suppliers").insert({        created_at: new Date().toISOString(),
+
         id: crypto.randomUUID(),
         name: input.name.trim(),
         contact_info: input.contactInfo.trim() || null,

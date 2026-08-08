@@ -195,7 +195,8 @@ export async function processImport(
     const { data: batchData, error: batchError } = await db().then((s) =>
       s
         .from("import_batches")
-        .insert({
+        .insert({        created_at: new Date().toISOString(),
+
         id: crypto.randomUUID(),
           filename,
           status: "processing",
@@ -235,7 +236,8 @@ export async function processImport(
       const { type, date, description, amount, currency } = result;
 
       const { error: txError } = await db().then((s) =>
-        s.from("transactions").insert({
+        s.from("transactions").insert({        created_at: new Date().toISOString(),
+
         id: crypto.randomUUID(),
           type,
           date: date.toISOString(),

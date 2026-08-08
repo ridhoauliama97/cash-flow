@@ -92,7 +92,8 @@ export async function createProduct(input: ProductInput): Promise<ActionResult> 
     if (invalid) return { ok: false, error: invalid };
 
     const { error } = await db().then((s) =>
-      s.from("products").insert({
+      s.from("products").insert({        created_at: new Date().toISOString(),
+
         id: crypto.randomUUID(),
         name: input.name.trim(),
         description: input.description?.trim() || null,

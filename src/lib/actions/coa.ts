@@ -54,7 +54,8 @@ export async function createCoa(input: CoaInput): Promise<ActionResult> {
     if (existing && existing.length > 0) return { ok: false, error: "Kode akun sudah dipakai" };
 
     const { error } = await db().then((s) =>
-      s.from("chart_of_accounts").insert({
+      s.from("chart_of_accounts").insert({        created_at: new Date().toISOString(),
+
         id: crypto.randomUUID(),
         code: input.code.trim(),
         name: input.name.trim(),

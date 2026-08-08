@@ -86,7 +86,8 @@ export async function createCostCenter(
     }
 
     const { error } = await db().then((s) =>
-      s.from("cost_centers").insert({
+      s.from("cost_centers").insert({        created_at: new Date().toISOString(),
+
         id: crypto.randomUUID(),
         code: input.code.trim(),
         name: input.name.trim(),

@@ -137,7 +137,8 @@ export async function createCompany(input: CompanyInput): Promise<ActionResult> 
     if (invalid) return { ok: false, error: invalid };
 
     const { error } = await db().then((s) =>
-      s.from("companies").insert({
+      s.from("companies").insert({        created_at: new Date().toISOString(),
+
         id: crypto.randomUUID(),
         name: input.name.trim(),
         address: input.address || null,

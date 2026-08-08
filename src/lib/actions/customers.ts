@@ -53,7 +53,8 @@ export async function createCustomer(input: CustomerInput): Promise<ActionResult
     if (invalid) return { ok: false, error: invalid };
 
     const { error } = await db().then((s) =>
-      s.from("customers").insert({
+      s.from("customers").insert({        created_at: new Date().toISOString(),
+
         id: crypto.randomUUID(),
         name: input.name.trim(),
         contact_info: input.contactInfo?.trim() || null,

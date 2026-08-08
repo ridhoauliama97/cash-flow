@@ -80,7 +80,8 @@ export async function createDepartment(
     if (invalid) return { ok: false, error: invalid };
 
     const { error } = await db().then((s) =>
-      s.from("departments").insert({
+      s.from("departments").insert({        created_at: new Date().toISOString(),
+
         id: crypto.randomUUID(),
         name: input.name.trim(),
         division_id: input.divisionId,

@@ -83,7 +83,8 @@ export async function createPeriod(input: {
     const { data, error } = await db().then((s) =>
       s
         .from("accounting_periods")
-        .insert({
+        .insert({        created_at: new Date().toISOString(),
+
         id: crypto.randomUUID(),
           start_date: input.startDate,
           end_date: input.endDate,

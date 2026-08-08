@@ -138,7 +138,8 @@ export async function approveTransaction(
     }
 
     const { error: insError } = await db().then((s) =>
-      s.from("approvals").insert({
+      s.from("approvals").insert({        created_at: new Date().toISOString(),
+
         id: crypto.randomUUID(),
         transaction_id: id,
         approver_id: user.id,
@@ -184,7 +185,8 @@ export async function rejectTransaction(
     }
 
     const { error: insError } = await db().then((s) =>
-      s.from("approvals").insert({
+      s.from("approvals").insert({        created_at: new Date().toISOString(),
+
         id: crypto.randomUUID(),
         transaction_id: id,
         approver_id: user.id,

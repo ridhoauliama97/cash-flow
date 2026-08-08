@@ -111,7 +111,8 @@ export async function createRole(input: RoleInput): Promise<ActionResult> {
     if (invalid) return { ok: false, error: invalid };
 
     const { error } = await db().then((s) =>
-      s.from("roles").insert({
+      s.from("roles").insert({        created_at: new Date().toISOString(),
+
         id: crypto.randomUUID(),
         name: input.name.trim(),
         level: input.level,
