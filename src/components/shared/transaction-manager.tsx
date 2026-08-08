@@ -16,15 +16,12 @@ import {
 import { TransactionFormDialog } from "@/components/shared/transaction-form-dialog";
 import {
   TransactionsTable,
-  TRANSACTION_STATUS_LABELS,
-  TRANSACTION_TYPE_LABELS,
 } from "@/components/shared/transactions-table";
 import { deleteTransaction } from "@/lib/actions/transactions";
 import { submitForApproval } from "@/lib/actions/approvals";
 import { postJournalAction } from "@/lib/actions/ledger";
 import type { TransactionRow } from "@/lib/actions/transactions";
 import type { CostCenterRow } from "@/lib/cost-centers";
-import type { TransactionStatus, TransactionTypeFase1 } from "@/types/ledger";
 
 export function TransactionManager({
   rows,
@@ -111,25 +108,14 @@ export function TransactionManager({
             value={typeFilter}
             onValueChange={(v) => setTypeFilter(v ?? "")}
           >
-            <SelectTrigger className="w-44" id="txn-filter-type">
-              <SelectValue />
+            <SelectTrigger className="h-8 w-40" aria-label="Filter tipe">
+              <SelectValue placeholder="Semua tipe" />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                <SelectItem value="" className="text-muted-foreground">
-                  Semua tipe
-                </SelectItem>
-                {(
-                  Object.keys(TRANSACTION_TYPE_LABELS) as TransactionTypeFase1[]
-                ).map((s) => (
-                  <SelectItem
-                    key={s}
-                    value={s}
-                    className="text-muted-foreground"
-                  >
-                    {TRANSACTION_TYPE_LABELS[s]}
-                  </SelectItem>
-                ))}
+                <SelectItem value="">Semua</SelectItem>
+                <SelectItem value="income">Pemasukan</SelectItem>
+                <SelectItem value="expense">Pengeluaran</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
@@ -138,27 +124,24 @@ export function TransactionManager({
           <Label htmlFor="txn-filter-status">Status</Label>
           <Select
             value={statusFilter}
-            onValueChange={(v) => setStatusFilter(v ?? "")}
+            onValueChange={(v) => {
+              setStatusFilter((prev) => [
+                ...prev.filter((f) => f.id !== "status"),
+                ...(v && v !== "semua" ? [{ id: "status", value: v }] : []),
+              ]);
+            }}
           >
-            <SelectTrigger className="w-44" id="txn-filter-status">
-              <SelectValue />
+            <SelectTrigger className="h-8 w-40" aria-label="Filter status">
+              <SelectValue placeholder="Semua status" />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                <SelectItem value="" className="text-muted-foreground">
-                  Semua status
-                </SelectItem>
-                {(
-                  Object.keys(TRANSACTION_STATUS_LABELS) as TransactionStatus[]
-                ).map((s) => (
-                  <SelectItem
-                    key={s}
-                    value={s}
-                    className="text-muted-foreground"
-                  >
-                    {TRANSACTION_STATUS_LABELS[s]}
-                  </SelectItem>
-                ))}
+                <SelectItem value="">Semua</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="pending">Menunggu</SelectItem>
+                <SelectItem value="approved">Disetujui</SelectItem>
+                <SelectItem value="rejected">Ditolak</SelectItem>
+                <SelectItem value="posted">Diposting</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
