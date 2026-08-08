@@ -4,12 +4,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   ArrowDownUp,
+  BarChart3,
   Building2,
+  CalendarClock,
+  FileDown,
   FileText,
   FolderTree,
   LayoutDashboard,
+  LineChart,
+  PiggyBank,
   Settings,
+  TrendingUp,
   Truck,
+  Upload,
   Users,
   Wallet,
 } from "lucide-react";
@@ -18,13 +25,36 @@ import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 const NAV_ITEMS = [
   { to: "/", label: "Overview", icon: LayoutDashboard },
-  { to: "/transactions", label: "Transaksi", icon: ArrowDownUp },
-  { to: "/master/chart-of-accounts", label: "Master Data", icon: FolderTree },
+  { to: "/analytics/revenue", label: "Revenue", icon: BarChart3 },
+  { to: "/analytics/expenses", label: "Expenses", icon: Wallet },
+  {
+    to: "/analytics/profitability",
+    label: "Profitability",
+    icon: TrendingUp,
+  },
+  { to: "/analytics/cash-flow", label: "Cash Flow", icon: LineChart },
+  {
+    to: "/analytics/receivables",
+    label: "Receivable & Payable",
+    icon: PiggyBank,
+  },
+  { to: "/transactions", label: "Transactions", icon: ArrowDownUp },
+  {
+    to: "/master/chart-of-accounts",
+    label: "Master Data",
+    icon: FolderTree,
+  },
+  { to: "/analytics/forecast", label: "Forecast", icon: CalendarClock },
+  { to: "/reports/general-ledger", label: "Reports & Export", icon: FileText },
+  { to: "/analytics/import", label: "Import Data", icon: Upload },
+  { to: "/analytics/schedules", label: "Schedules", icon: FileDown },
+  { to: "/settings/users", label: "Settings", icon: Settings },
+];
+
+const MASTER_SUB = [
   { to: "/master/customers", label: "Customers", icon: Users },
   { to: "/master/suppliers", label: "Suppliers", icon: Truck },
   { to: "/master/cost-centers", label: "Cost Centers", icon: Building2 },
-  { to: "/reports/general-ledger", label: "Laporan", icon: FileText },
-  { to: "/settings/users", label: "Settings", icon: Settings },
 ];
 
 export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -58,21 +88,43 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
           {NAV_ITEMS.map(({ to, label, icon: Icon }) => {
             const active =
               to === "/" ? pathname === "/" : pathname.startsWith(to);
+            const subActive =
+              to === "/master/chart-of-accounts" &&
+              MASTER_SUB.some((s) => pathname.startsWith(s.to));
+
             return (
-              <Link
-                key={to}
-                href={to}
-                onClick={onClose}
-                className={cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                  active
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
-                )}
-              >
-                <Icon className="size-4 shrink-0" />
-                {label}
-              </Link>
+              <div key={to}>
+                <Link
+                  href={to}
+                  onClick={onClose}
+                  className={cn(
+                    "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    active || subActive
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                      : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                  )}
+                >
+                  <Icon className="size-4 shrink-0" />
+                  {label}
+                </Link>
+                {to === "/master/chart-of-accounts" &&
+                  MASTER_SUB.map((sub) => (
+                    <Link
+                      key={sub.to}
+                      href={sub.to}
+                      onClick={onClose}
+                      className={cn(
+                        "flex items-center gap-3 rounded-md py-1.5 pl-11 pr-3 text-sm font-medium transition-colors",
+                        pathname.startsWith(sub.to)
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                          : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                      )}
+                    >
+                      <sub.icon className="size-3.5 shrink-0" />
+                      {sub.label}
+                    </Link>
+                  ))}
+              </div>
             );
           })}
         </nav>
