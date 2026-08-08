@@ -5,9 +5,15 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const TABS = [
+  { href: "/settings/general", label: "Umum" },
+  { href: "/settings/companies", label: "Perusahaan" },
   { href: "/settings/users", label: "Users" },
   { href: "/settings/roles", label: "Roles" },
   { href: "/settings/permissions", label: "Permissions" },
+  { href: "/settings/divisions", label: "Divisi" },
+  { href: "/settings/departments", label: "Departemen" },
+  { href: "/settings/employees", label: "Karyawan" },
+  { href: "/settings/periods", label: "Periode" },
 ] as const;
 
 export default function SettingsLayout({

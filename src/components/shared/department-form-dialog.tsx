@@ -22,45 +22,50 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createCostCenter, updateCostCenter } from "@/lib/actions/cost-centers";
-import type { CostCenterRow, DivisionRow } from "@/lib/cost-centers";
+import { createDepartment, updateDepartment } from "@/lib/actions/departments";
+import type { DepartmentRow } from "@/lib/actions/departments";
+import type { DivisionRow } from "@/lib/actions/divisions";
 
-export interface CostCenterFormDialogProps {
+export interface DepartmentFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Edit mode bila diisi, else create. */
-  costCenter?: CostCenterRow | null;
-  /** Semua divisi — untuk pilihan di form. */
+  department: DepartmentRow | null;
   divisions: DivisionRow[];
 }
 
-export function CostCenterFormDialog({
+export function DepartmentFormDialog({
   open,
   onOpenChange,
-  costCenter,
+  department,
   divisions,
-}: CostCenterFormDialogProps) {
+}: DepartmentFormDialogProps) {
   const router = useRouter();
-  // State diinisialisasi dari props; dialog di-remount via `key` saat target
-  // berganti (lihat CostCenterManager) — hindari setState sinkron dalam effect.
-  const [code, setCode] = useState(costCenter?.code ?? "");
-  const [name, setName] = useState(costCenter?.name ?? "");
-  const [divisionId, setDivisionId] = useState(costCenter?.divisionId ?? "");
+  const [name, setName] = useState(department?.name ?? "");
+  const [divisionId, setDivisionId] = useState<string>(
+    department?.divisionId ?? "",
+  );
   const [busy, setBusy] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    const input = { code, name, divisionId };
-    const res = costCenter
-      ? await updateCostCenter(costCenter.id, input)
-      : await createCostCenter(input);
-    setBusy(false);
+    const res = department
+      ? await updateDepartment(department.id, {
+          name,
+          divisionId: divisionId || null,
+        })
+      : await createDepartment({ name, divisionId: divisionId || null });
     if (!res.ok) {
+      setBusy(false);
       toast.error(res.error);
       return;
     }
-    toast.success(costCenter ? "Cost center diperbarui" : "Cost center dibuat");
+    setBusy(false);
+    toast.success(
+      department ? "Departemen diperbarui" : "Departemen ditambahkan",
+    );
+    setName("");
+    setDivisionId("");
     onOpenChange(false);
     router.refresh();
   }
@@ -70,46 +75,37 @@ export function CostCenterFormDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {costCenter ? "Edit Cost Center" : "Tambah Cost Center"}
+            {department ? "Edit Departemen" : "Tambah Departemen"}
           </DialogTitle>
           <DialogDescription>
-            Kode dan nama cost center; pilih divisi pemiliknya.
+            {department
+              ? "Perbarui informasi departemen."
+              : "Masukkan informasi departemen baru."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="grid gap-4">
           <div className="grid gap-2">
-            <Label htmlFor="cost-center-code">Kode cost center</Label>
+            <Label htmlFor="department-name">Nama</Label>
             <Input
-              id="cost-center-code"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="CC-001"
-              required
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="cost-center-name">Nama cost center</Label>
-            <Input
-              id="cost-center-name"
+              id="department-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Marketing"
-              required
+              placeholder="Nama departemen"
+              autoFocus
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="cost-center-division">Divisi</Label>
+            <Label>Divisi</Label>
             <Select
               value={divisionId}
-              onValueChange={(v) => {
-                if (v !== null) setDivisionId(v);
-              }}
+              onValueChange={(v) => setDivisionId(v ?? "")}
             >
-              <SelectTrigger className="w-full" id="cost-center-division">
+              <SelectTrigger>
                 <SelectValue placeholder="Pilih divisi" />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
+                  <SelectItem value="">— Tanpa divisi</SelectItem>
                   {divisions.map((d) => (
                     <SelectItem key={d.id} value={d.id}>
                       {d.name}
@@ -127,8 +123,8 @@ export function CostCenterFormDialog({
             >
               Batal
             </Button>
-            <Button type="submit" disabled={busy}>
-              {busy ? "Menyimpan…" : costCenter ? "Simpan" : "Buat"}
+            <Button type="submit" disabled={busy || !name.trim()}>
+              {busy ? "Menyimpan…" : "Simpan"}
             </Button>
           </DialogFooter>
         </form>

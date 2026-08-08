@@ -3,13 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import {
-  ChevronsUpDown,
-  ArrowUp,
-  ArrowDown,
-  Search,
-  Plus,
-} from "lucide-react";
+import { ChevronsUpDown, ArrowUp, ArrowDown, Search, Plus } from "lucide-react";
 import {
   type ColumnFiltersState,
   type SortingState,
@@ -47,11 +41,12 @@ import { formatIDR } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { ForecastRow } from "@/lib/actions/forecasts";
 
-const CATEGORY_VARIANT: Record<string, "success" | "destructive" | "default"> = {
-  revenue: "success",
-  expense: "destructive",
-  profit: "default",
-};
+const CATEGORY_VARIANT: Record<string, "success" | "destructive" | "default"> =
+  {
+    revenue: "success",
+    expense: "destructive",
+    profit: "default",
+  };
 
 const CATEGORY_LABEL: Record<string, string> = {
   revenue: "Pendapatan",
@@ -144,11 +139,15 @@ export function ForecastManager({ forecasts }: { forecasts: ForecastRow[] }) {
             className="inline-flex"
             onClick={column.getToggleSortingHandler()}
           >
-            <SortableHeader sorted={column.getIsSorted()}>Kategori</SortableHeader>
+            <SortableHeader sorted={column.getIsSorted()}>
+              Kategori
+            </SortableHeader>
           </button>
         ),
         cell: ({ row }) => (
-          <Badge variant={CATEGORY_VARIANT[row.original.category] ?? "secondary"}>
+          <Badge
+            variant={CATEGORY_VARIANT[row.original.category] ?? "secondary"}
+          >
             {CATEGORY_LABEL[row.original.category] ?? row.original.category}
           </Badge>
         ),
@@ -162,7 +161,9 @@ export function ForecastManager({ forecasts }: { forecasts: ForecastRow[] }) {
             className="inline-flex"
             onClick={column.getToggleSortingHandler()}
           >
-            <SortableHeader sorted={column.getIsSorted()}>Deskripsi</SortableHeader>
+            <SortableHeader sorted={column.getIsSorted()}>
+              Deskripsi
+            </SortableHeader>
           </button>
         ),
         cell: ({ row }) => row.original.description ?? "—",
@@ -176,7 +177,9 @@ export function ForecastManager({ forecasts }: { forecasts: ForecastRow[] }) {
             className="inline-flex"
             onClick={column.getToggleSortingHandler()}
           >
-            <SortableHeader sorted={column.getIsSorted()}>Jumlah</SortableHeader>
+            <SortableHeader sorted={column.getIsSorted()}>
+              Jumlah
+            </SortableHeader>
           </button>
         ),
         cell: ({ row }) => (
@@ -241,7 +244,12 @@ export function ForecastManager({ forecasts }: { forecasts: ForecastRow[] }) {
   }
 
   async function handleDelete(f: ForecastRow) {
-    if (!confirm(`Hapus forecast ${CATEGORY_LABEL[f.category] ?? f.category} — ${formatMonth(f.month)} ${f.year}?`)) return;
+    if (
+      !confirm(
+        `Hapus forecast ${CATEGORY_LABEL[f.category] ?? f.category} — ${formatMonth(f.month)} ${f.year}?`,
+      )
+    )
+      return;
     setBusyId(f.id);
     const res = await deleteForecast(f.id);
     setBusyId(null);
@@ -255,8 +263,8 @@ export function ForecastManager({ forecasts }: { forecasts: ForecastRow[] }) {
 
   const yearFilter = (columnFilters.find((f) => f.id === "year")?.value ??
     "") as string;
-  const categoryFilter = (columnFilters.find((f) => f.id === "category")?.value ??
-    "") as string;
+  const categoryFilter = (columnFilters.find((f) => f.id === "category")
+    ?.value ?? "") as string;
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6 p-6">
@@ -331,7 +339,8 @@ export function ForecastManager({ forecasts }: { forecasts: ForecastRow[] }) {
           </SelectContent>
         </Select>
         <span className="ml-auto text-xs text-muted-foreground">
-          {table.getFilteredRowModel().rows.length} dari {forecasts.length} forecast
+          {table.getFilteredRowModel().rows.length} dari {forecasts.length}{" "}
+          forecast
         </span>
       </div>
 

@@ -14,6 +14,7 @@ import {
   FolderTree,
   LayoutDashboard,
   LineChart,
+  Package,
   PiggyBank,
   Settings,
   TrendingUp,
@@ -122,6 +123,7 @@ const MASTER_SUB = [
   { to: "/master/customers", label: "Customers", icon: Users },
   { to: "/master/suppliers", label: "Suppliers", icon: Truck },
   { to: "/master/cost-centers", label: "Cost Centers", icon: Building2 },
+  { to: "/master/products", label: "Products", icon: Package },
 ];
 
 type NavPermission = readonly [module: string, action: string];

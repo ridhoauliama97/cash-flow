@@ -8,7 +8,9 @@ import {
   ArrowUp,
   ArrowDown,
   Search,
-  UserRound,
+  Plus,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import {
   type ColumnFiltersState,
@@ -40,12 +42,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Switch } from "@/components/ui/switch";
-import { UserFormDialog } from "@/components/shared/user-form-dialog";
-import { setUserActive } from "@/lib/actions/users";
+import { ProductFormDialog } from "@/components/shared/product-form-dialog";
+import { deleteProduct, type ProductRow } from "@/lib/actions/products";
+import { formatIDR } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { UserRow } from "@/lib/actions/users";
-import type { RoleRow } from "@/lib/actions/roles";
 
 function SortableHeader({
   sorted,
@@ -72,41 +72,19 @@ function SortableHeader({
   );
 }
 
-export function UsersManager({
-  rows,
-  roles,
-  superAdminIds,
-}: {
-  rows: UserRow[];
-  roles: RoleRow[];
-  superAdminIds: string[];
-}) {
+export function ProductManager({ rows }: { rows: ProductRow[] }) {
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<UserRow | null>(null);
+  const [editing, setEditing] = useState<ProductRow | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
-  const isSuperAdmin = (u: UserRow) => superAdminIds.includes(u.id);
-
-  const divisions = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          rows
-            .map((r) => r.divisionName)
-            .filter((d): d is string => d !== null),
-        ),
-      ).sort(),
-    [rows],
-  );
-
   const data = useMemo(() => rows, [rows]);
 
-  const columns = useMemo<ColumnDef<UserRow>[]>(
+  const columns = useMemo<ColumnDef<ProductRow>[]>(
     () => [
       {
         id: "name",
@@ -121,33 +99,28 @@ export function UsersManager({
           </button>
         ),
         cell: ({ row }) => (
-          <span className="inline-flex items-center gap-2">
-            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-              <UserRound className="size-3.5" />
-            </span>
-            <span className="font-medium">{row.original.name ?? "—"}</span>
-          </span>
+          <span className="font-medium">{row.original.name}</span>
         ),
       },
       {
-        id: "email",
-        accessorKey: "email",
+        id: "sku",
+        accessorKey: "sku",
         header: ({ column }) => (
           <button
             type="button"
             className="inline-flex"
             onClick={column.getToggleSortingHandler()}
           >
-            <SortableHeader sorted={column.getIsSorted()}>Email</SortableHeader>
+            <SortableHeader sorted={column.getIsSorted()}>SKU</SortableHeader>
           </button>
         ),
         cell: ({ row }) => (
-          <span className="font-mono text-xs">{row.original.email}</span>
+          <span className="font-mono text-xs">{row.original.sku ?? "—"}</span>
         ),
       },
       {
-        id: "divisionName",
-        accessorKey: "divisionName",
+        id: "description",
+        accessorKey: "description",
         header: ({ column }) => (
           <button
             type="button"
@@ -155,41 +128,49 @@ export function UsersManager({
             onClick={column.getToggleSortingHandler()}
           >
             <SortableHeader sorted={column.getIsSorted()}>
-              Divisi
+              Deskripsi
             </SortableHeader>
           </button>
         ),
-        cell: ({ row }) => row.original.divisionName ?? "—",
+        cell: ({ row }) => (
+          <span className="text-muted-foreground">
+            {row.original.description ?? "—"}
+          </span>
+        ),
       },
       {
-        id: "roles",
-        accessorFn: (u) => u.roles.map((r) => r.name).join(", "),
+        id: "price",
+        accessorKey: "price",
         header: ({ column }) => (
           <button
             type="button"
             className="inline-flex"
             onClick={column.getToggleSortingHandler()}
           >
-            <SortableHeader sorted={column.getIsSorted()}>Role</SortableHeader>
+            <SortableHeader sorted={column.getIsSorted()}>Harga</SortableHeader>
           </button>
         ),
-        cell: ({ row }) => {
-          const userRoles = row.original.roles;
-          return (
-            <div className="flex flex-wrap gap-1">
-              {userRoles.length === 0 && (
-                <span className="text-xs text-muted-foreground">
-                  tanpa role
-                </span>
-              )}
-              {userRoles.map((r) => (
-                <Badge key={r.id} variant="secondary" className="capitalize">
-                  {r.name}
-                </Badge>
-              ))}
-            </div>
-          );
-        },
+        cell: ({ row }) => (
+          <span className="tabular-nums">{formatIDR(row.original.price)}</span>
+        ),
+      },
+      {
+        id: "currency",
+        accessorKey: "currency",
+        header: ({ column }) => (
+          <button
+            type="button"
+            className="inline-flex"
+            onClick={column.getToggleSortingHandler()}
+          >
+            <SortableHeader sorted={column.getIsSorted()}>
+              Mata Uang
+            </SortableHeader>
+          </button>
+        ),
+        cell: ({ row }) => (
+          <span className="text-muted-foreground">{row.original.currency}</span>
+        ),
       },
       {
         id: "isActive",
@@ -213,26 +194,17 @@ export function UsersManager({
           </button>
         ),
         cell: ({ row }) => {
-          const user = row.original;
+          const prod = row.original;
           return (
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={user.isActive}
-                disabled={busyId === user.id || isSuperAdmin(user)}
-                onCheckedChange={(v) => handleToggleActive(user, v)}
-                aria-label={`Status aktif ${user.name ?? user.email}`}
-              />
-              <span
-                className={cn(
-                  "text-xs font-medium",
-                  user.isActive
-                    ? "text-emerald-600 dark:text-emerald-400"
-                    : "text-muted-foreground",
-                )}
-              >
-                {user.isActive ? "Aktif" : "Nonaktif"}
-              </span>
-            </div>
+            <Badge
+              variant={prod.isActive ? "default" : "secondary"}
+              className={cn(
+                prod.isActive &&
+                  "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+              )}
+            >
+              {prod.isActive ? "Aktif" : "Nonaktif"}
+            </Badge>
           );
         },
       },
@@ -243,22 +215,30 @@ export function UsersManager({
           <div className="flex justify-end gap-1">
             <Button
               variant="ghost"
-              size="sm"
-              disabled={isSuperAdmin(row.original)}
+              size="icon"
+              className="size-8"
+              disabled={busyId === row.original.id}
               onClick={() => openEdit(row.original)}
             >
-              Edit Role
+              <Pencil className="size-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8 text-destructive"
+              disabled={busyId === row.original.id}
+              onClick={() => handleDelete(row.original)}
+            >
+              <Trash2 className="size-4" />
             </Button>
           </div>
         ),
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [busyId, superAdminIds],
+    [busyId],
   );
 
-  // useReactTable: hasilnya unstable per render — data/columns sudah di-memoize
-  // (lihat useMemo di atas); peringatan ini bukan error dan tidak menggagalkan CI.
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
@@ -273,36 +253,35 @@ export function UsersManager({
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  function openEdit(user: UserRow) {
-    setEditing(user);
+  function openEdit(product: ProductRow) {
+    setEditing(product);
     setDialogOpen(true);
   }
 
-  async function handleToggleActive(user: UserRow, next: boolean) {
-    setBusyId(user.id);
-    const res = await setUserActive(user.id, next);
+  async function handleDelete(product: ProductRow) {
+    if (!confirm(`Hapus produk "${product.name}"?`)) return;
+    setBusyId(product.id);
+    const res = await deleteProduct(product.id);
     setBusyId(null);
     if (!res.ok) {
       toast.error(res.error);
       return;
     }
-    toast.success(next ? "User diaktifkan" : "User dinonaktifkan");
+    toast.success("Produk dihapus");
     router.refresh();
   }
 
   const statusFilter = (columnFilters.find((f) => f.id === "isActive")?.value ??
     "") as string;
-  const divisionFilter = (columnFilters.find((f) => f.id === "divisionName")
-    ?.value ?? "") as string;
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6 p-6">
       <div>
         <h1 className="font-heading text-xl font-semibold tracking-tight">
-          Users
+          Produk
         </h1>
         <p className="text-sm text-muted-foreground">
-          Kelola role dan status user. Data milik Super Admin tidak bisa diubah.
+          Daftar produk — master data nama, SKU, dan harga.
         </p>
       </div>
 
@@ -312,9 +291,9 @@ export function UsersManager({
           <Input
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
-            placeholder="Cari nama / email…"
+            placeholder="Cari nama / SKU…"
             className="h-8 w-64 pl-8"
-            aria-label="Cari user"
+            aria-label="Cari produk"
           />
         </div>
         <Select
@@ -337,31 +316,19 @@ export function UsersManager({
             </SelectGroup>
           </SelectContent>
         </Select>
-        <Select
-          value={divisionFilter}
-          onValueChange={(v) => {
-            setColumnFilters((prev) => [
-              ...prev.filter((f) => f.id !== "divisionName"),
-              ...(v && v !== "semua" ? [{ id: "divisionName", value: v }] : []),
-            ]);
+        <Button
+          size="sm"
+          className="ml-auto"
+          onClick={() => {
+            setEditing(null);
+            setDialogOpen(true);
           }}
         >
-          <SelectTrigger className="h-8 w-44" aria-label="Filter divisi">
-            <SelectValue placeholder="Semua divisi" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectItem value="semua">Semua divisi</SelectItem>
-              {divisions.map((d) => (
-                <SelectItem key={d} value={d}>
-                  {d}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-        <span className="ml-auto text-xs text-muted-foreground">
-          {table.getFilteredRowModel().rows.length} dari {rows.length} user
+          <Plus className="mr-1.5 size-4" />
+          Tambah
+        </Button>
+        <span className="text-xs text-muted-foreground">
+          {table.getFilteredRowModel().rows.length} dari {rows.length} produk
         </span>
       </div>
 
@@ -390,7 +357,7 @@ export function UsersManager({
                   colSpan={columns.length}
                   className="py-10 text-center text-muted-foreground"
                 >
-                  Tidak ada user yang cocok dengan filter.
+                  Tidak ada produk yang cocok dengan filter.
                 </TableCell>
               </TableRow>
             ) : (
@@ -411,12 +378,11 @@ export function UsersManager({
         </Table>
       </div>
 
-      <UserFormDialog
-        key={editing ? `edit-${editing.id}` : "closed"}
+      <ProductFormDialog
+        key={editing ? `edit-${editing.id}` : "create"}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        user={editing}
-        roles={roles}
+        product={editing}
       />
     </div>
   );

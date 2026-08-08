@@ -426,7 +426,77 @@ async function main() {
       console.log(`[seed] schedules: skip (already ${schCount} rows)`);
     }
 
-    const [u, d, r, p, rp, c, cc, cust, supp, tx, inv, fc, sch] = await Promise.all([
+    // 14. Sample departments (idempotent)
+    const deptCount = await prisma.department.count();
+    if (deptCount === 0) {
+      const divFinance = await prisma.division.findUnique({ where: { name: "Finance" } });
+      const divAcc = await prisma.division.findUnique({ where: { name: "Accounting" } });
+      const deptData: Array<{ name: string; divisionId: string | null }> = [
+        { name: "Account Payable", divisionId: divFinance?.id ?? null },
+        { name: "Account Receivable", divisionId: divFinance?.id ?? null },
+        { name: "Tax & Compliance", divisionId: divAcc?.id ?? null },
+      ];
+      for (const d of deptData) {
+        await prisma.department.create({ data: d });
+      }
+      console.log(`[seed] departments: ${deptData.length} OK`);
+    } else {
+      console.log(`[seed] departments: skip (already ${deptCount} rows)`);
+    }
+
+    // 15. Sample employees (idempotent)
+    const empCount = await prisma.employee.count();
+    if (empCount === 0) {
+      const divFinance = await prisma.division.findUnique({ where: { name: "Finance" } });
+      const deptAP = await prisma.department.findFirst({ where: { name: "Account Payable" } });
+      const empData = [
+        { name: "Andi Saputra", email: "andi@example.com", divisionId: divFinance?.id ?? null, departmentId: deptAP?.id ?? null, position: "Staff Finance" },
+        { name: "Budi Santoso", email: "budi@example.com", divisionId: divFinance?.id ?? null, departmentId: deptAP?.id ?? null, position: "Kepala Finance" },
+      ];
+      for (const e of empData) {
+        await prisma.employee.create({ data: e });
+      }
+      console.log(`[seed] employees: ${empData.length} OK`);
+    } else {
+      console.log(`[seed] employees: skip (already ${empCount} rows)`);
+    }
+
+    // 16. Sample products (idempotent)
+    const prodCount = await prisma.product.count();
+    if (prodCount === 0) {
+      await prisma.product.createMany({
+        data: [
+          { name: "Konsultasi Akuntansi", description: "Layanan konsultasi akuntansi per jam", sku: "SVC-001", price: 500_000, currency: "IDR" },
+          { name: "Laporan Keuangan Bulanan", description: "Penyusunan laporan keuangan bulanan", sku: "SVC-002", price: 2_000_000, currency: "IDR" },
+          { name: "Audit Internal", description: "Audit internal tahunan", sku: "SVC-003", price: 15_000_000, currency: "IDR" },
+        ],
+      });
+      console.log(`[seed] products: 3 OK`);
+    } else {
+      console.log(`[seed] products: skip (already ${prodCount} rows)`);
+    }
+
+    // 17. Default company (idempotent)
+    const compCount = await prisma.company.count();
+    if (compCount === 0) {
+      await prisma.company.create({
+        data: {
+          name: "CV Cash Flow Maju",
+          address: "Jl. Sudirman No. 123, Jakarta Selatan",
+          phone: "021-555-0100",
+          email: "info@cashflowmaju.co.id",
+          website: "https://cashflowmaju.co.id",
+          taxNumber: "0123456789012345",
+          defaultCompany: true,
+          isActive: true,
+        },
+      });
+      console.log(`[seed] companies: 1 OK`);
+    } else {
+      console.log(`[seed] companies: skip (already ${compCount} rows)`);
+    }
+
+    const [u, d, r, p, rp, c, cc, cust, supp, tx, inv, fc, sch, dept, emp, prod, comp] = await Promise.all([
       prisma.user.count(),
       prisma.division.count(),
       prisma.role.count(),
@@ -440,9 +510,13 @@ async function main() {
       prisma.invoice.count(),
       prisma.forecast.count(),
       prisma.schedule.count(),
+      prisma.department.count(),
+      prisma.employee.count(),
+      prisma.product.count(),
+      prisma.company.count(),
     ]);
     console.log(
-      `[seed] selesai. users=${u} divisions=${d} roles=${r} permissions=${p} role_permissions=${rp} coa=${c} cost_centers=${cc} customers=${cust} suppliers=${supp} transactions=${tx} invoices=${inv} forecasts=${fc} schedules=${sch}`,
+      `[seed] selesai. users=${u} divisions=${d} roles=${r} permissions=${p} role_permissions=${rp} coa=${c} cost_centers=${cc} customers=${cust} suppliers=${supp} transactions=${tx} invoices=${inv} forecasts=${fc} schedules=${sch} departments=${dept} employees=${emp} products=${prod} companies=${comp}`,
     );
   } finally {
     await prisma.$disconnect();

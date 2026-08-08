@@ -52,10 +52,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { formatDate } from "@/lib/format";
-import {
-  processImport,
-  deleteImportBatch,
-} from "@/lib/actions/import";
+import { processImport, deleteImportBatch } from "@/lib/actions/import";
 import type { ImportBatchRow, ImportError } from "@/lib/actions/import";
 
 function SortableHeader({
@@ -218,9 +215,7 @@ export function ImportManager({ batches }: { batches: ImportBatchRow[] }) {
             className="inline-flex"
             onClick={column.getToggleSortingHandler()}
           >
-            <SortableHeader sorted={column.getIsSorted()}>
-              Gagal
-            </SortableHeader>
+            <SortableHeader sorted={column.getIsSorted()}>Gagal</SortableHeader>
           </button>
         ),
         cell: ({ row }) => (
@@ -305,8 +300,8 @@ export function ImportManager({ batches }: { batches: ImportBatchRow[] }) {
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  const statusFilterVal = (columnFilters.find((f) => f.id === "status")?.value ??
-    "") as string;
+  const statusFilterVal = (columnFilters.find((f) => f.id === "status")
+    ?.value ?? "") as string;
 
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -368,10 +363,7 @@ export function ImportManager({ batches }: { batches: ImportBatchRow[] }) {
             amount, currency.
           </p>
         </div>
-        <Button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={busy}
-        >
+        <Button onClick={() => fileInputRef.current?.click()} disabled={busy}>
           <Upload className="mr-1.5 size-4" />
           Upload CSV
         </Button>
@@ -472,9 +464,7 @@ export function ImportManager({ batches }: { batches: ImportBatchRow[] }) {
 
       <Dialog
         open={errorsDialog.open}
-        onOpenChange={(open) =>
-          setErrorsDialog((prev) => ({ ...prev, open }))
-        }
+        onOpenChange={(open) => setErrorsDialog((prev) => ({ ...prev, open }))}
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

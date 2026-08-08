@@ -8,7 +8,9 @@ import {
   ArrowUp,
   ArrowDown,
   Search,
-  UserRound,
+  Plus,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import {
   type ColumnFiltersState,
@@ -40,12 +42,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Switch } from "@/components/ui/switch";
-import { UserFormDialog } from "@/components/shared/user-form-dialog";
-import { setUserActive } from "@/lib/actions/users";
+import { EmployeeFormDialog } from "@/components/shared/employee-form-dialog";
+import { deleteEmployee, type EmployeeRow } from "@/lib/actions/employees";
+import type { DivisionRow } from "@/lib/actions/divisions";
+import type { DepartmentRow } from "@/lib/actions/departments";
 import { cn } from "@/lib/utils";
-import type { UserRow } from "@/lib/actions/users";
-import type { RoleRow } from "@/lib/actions/roles";
 
 function SortableHeader({
   sorted,
@@ -72,27 +73,25 @@ function SortableHeader({
   );
 }
 
-export function UsersManager({
+export function EmployeeManager({
   rows,
-  roles,
-  superAdminIds,
+  divisions,
+  departments,
 }: {
-  rows: UserRow[];
-  roles: RoleRow[];
-  superAdminIds: string[];
+  rows: EmployeeRow[];
+  divisions: DivisionRow[];
+  departments: DepartmentRow[];
 }) {
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<UserRow | null>(null);
+  const [editing, setEditing] = useState<EmployeeRow | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
-  const isSuperAdmin = (u: UserRow) => superAdminIds.includes(u.id);
-
-  const divisions = useMemo(
+  const divisionNames = useMemo(
     () =>
       Array.from(
         new Set(
@@ -104,9 +103,21 @@ export function UsersManager({
     [rows],
   );
 
+  const departmentNames = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          rows
+            .map((r) => r.departmentName)
+            .filter((d): d is string => d !== null),
+        ),
+      ).sort(),
+    [rows],
+  );
+
   const data = useMemo(() => rows, [rows]);
 
-  const columns = useMemo<ColumnDef<UserRow>[]>(
+  const columns = useMemo<ColumnDef<EmployeeRow>[]>(
     () => [
       {
         id: "name",
@@ -121,12 +132,7 @@ export function UsersManager({
           </button>
         ),
         cell: ({ row }) => (
-          <span className="inline-flex items-center gap-2">
-            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-              <UserRound className="size-3.5" />
-            </span>
-            <span className="font-medium">{row.original.name ?? "—"}</span>
-          </span>
+          <span className="font-medium">{row.original.name}</span>
         ),
       },
       {
@@ -142,12 +148,16 @@ export function UsersManager({
           </button>
         ),
         cell: ({ row }) => (
-          <span className="font-mono text-xs">{row.original.email}</span>
+          <span className="font-mono text-xs">{row.original.email ?? "—"}</span>
         ),
       },
       {
         id: "divisionName",
         accessorKey: "divisionName",
+        filterFn: (row, columnId, filterValue: string) => {
+          if (filterValue === "semua") return true;
+          return row.getValue<string | null>(columnId) === filterValue;
+        },
         header: ({ column }) => (
           <button
             type="button"
@@ -162,34 +172,40 @@ export function UsersManager({
         cell: ({ row }) => row.original.divisionName ?? "—",
       },
       {
-        id: "roles",
-        accessorFn: (u) => u.roles.map((r) => r.name).join(", "),
+        id: "departmentName",
+        accessorKey: "departmentName",
+        filterFn: (row, columnId, filterValue: string) => {
+          if (filterValue === "semua") return true;
+          return row.getValue<string | null>(columnId) === filterValue;
+        },
         header: ({ column }) => (
           <button
             type="button"
             className="inline-flex"
             onClick={column.getToggleSortingHandler()}
           >
-            <SortableHeader sorted={column.getIsSorted()}>Role</SortableHeader>
+            <SortableHeader sorted={column.getIsSorted()}>
+              Departemen
+            </SortableHeader>
           </button>
         ),
-        cell: ({ row }) => {
-          const userRoles = row.original.roles;
-          return (
-            <div className="flex flex-wrap gap-1">
-              {userRoles.length === 0 && (
-                <span className="text-xs text-muted-foreground">
-                  tanpa role
-                </span>
-              )}
-              {userRoles.map((r) => (
-                <Badge key={r.id} variant="secondary" className="capitalize">
-                  {r.name}
-                </Badge>
-              ))}
-            </div>
-          );
-        },
+        cell: ({ row }) => row.original.departmentName ?? "—",
+      },
+      {
+        id: "position",
+        accessorKey: "position",
+        header: ({ column }) => (
+          <button
+            type="button"
+            className="inline-flex"
+            onClick={column.getToggleSortingHandler()}
+          >
+            <SortableHeader sorted={column.getIsSorted()}>
+              Posisi
+            </SortableHeader>
+          </button>
+        ),
+        cell: ({ row }) => row.original.position ?? "—",
       },
       {
         id: "isActive",
@@ -213,26 +229,17 @@ export function UsersManager({
           </button>
         ),
         cell: ({ row }) => {
-          const user = row.original;
+          const emp = row.original;
           return (
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={user.isActive}
-                disabled={busyId === user.id || isSuperAdmin(user)}
-                onCheckedChange={(v) => handleToggleActive(user, v)}
-                aria-label={`Status aktif ${user.name ?? user.email}`}
-              />
-              <span
-                className={cn(
-                  "text-xs font-medium",
-                  user.isActive
-                    ? "text-emerald-600 dark:text-emerald-400"
-                    : "text-muted-foreground",
-                )}
-              >
-                {user.isActive ? "Aktif" : "Nonaktif"}
-              </span>
-            </div>
+            <Badge
+              variant={emp.isActive ? "default" : "secondary"}
+              className={cn(
+                emp.isActive &&
+                  "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+              )}
+            >
+              {emp.isActive ? "Aktif" : "Nonaktif"}
+            </Badge>
           );
         },
       },
@@ -243,22 +250,30 @@ export function UsersManager({
           <div className="flex justify-end gap-1">
             <Button
               variant="ghost"
-              size="sm"
-              disabled={isSuperAdmin(row.original)}
+              size="icon"
+              className="size-8"
+              disabled={busyId === row.original.id}
               onClick={() => openEdit(row.original)}
             >
-              Edit Role
+              <Pencil className="size-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8 text-destructive"
+              disabled={busyId === row.original.id}
+              onClick={() => handleDelete(row.original)}
+            >
+              <Trash2 className="size-4" />
             </Button>
           </div>
         ),
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [busyId, superAdminIds],
+    [busyId],
   );
 
-  // useReactTable: hasilnya unstable per render — data/columns sudah di-memoize
-  // (lihat useMemo di atas); peringatan ini bukan error dan tidak menggagalkan CI.
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
@@ -273,20 +288,21 @@ export function UsersManager({
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  function openEdit(user: UserRow) {
-    setEditing(user);
+  function openEdit(employee: EmployeeRow) {
+    setEditing(employee);
     setDialogOpen(true);
   }
 
-  async function handleToggleActive(user: UserRow, next: boolean) {
-    setBusyId(user.id);
-    const res = await setUserActive(user.id, next);
+  async function handleDelete(employee: EmployeeRow) {
+    if (!confirm(`Hapus karyawan "${employee.name}"?`)) return;
+    setBusyId(employee.id);
+    const res = await deleteEmployee(employee.id);
     setBusyId(null);
     if (!res.ok) {
       toast.error(res.error);
       return;
     }
-    toast.success(next ? "User diaktifkan" : "User dinonaktifkan");
+    toast.success("Karyawan dihapus");
     router.refresh();
   }
 
@@ -294,15 +310,17 @@ export function UsersManager({
     "") as string;
   const divisionFilter = (columnFilters.find((f) => f.id === "divisionName")
     ?.value ?? "") as string;
+  const departmentFilter = (columnFilters.find((f) => f.id === "departmentName")
+    ?.value ?? "") as string;
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6 p-6">
       <div>
         <h1 className="font-heading text-xl font-semibold tracking-tight">
-          Users
+          Karyawan
         </h1>
         <p className="text-sm text-muted-foreground">
-          Kelola role dan status user. Data milik Super Admin tidak bisa diubah.
+          Kelola data karyawan — nama, divisi, departemen, dan posisi.
         </p>
       </div>
 
@@ -314,7 +332,7 @@ export function UsersManager({
             onChange={(e) => setGlobalFilter(e.target.value)}
             placeholder="Cari nama / email…"
             className="h-8 w-64 pl-8"
-            aria-label="Cari user"
+            aria-label="Cari karyawan"
           />
         </div>
         <Select
@@ -352,7 +370,7 @@ export function UsersManager({
           <SelectContent>
             <SelectGroup>
               <SelectItem value="semua">Semua divisi</SelectItem>
-              {divisions.map((d) => (
+              {divisionNames.map((d) => (
                 <SelectItem key={d} value={d}>
                   {d}
                 </SelectItem>
@@ -360,8 +378,44 @@ export function UsersManager({
             </SelectGroup>
           </SelectContent>
         </Select>
-        <span className="ml-auto text-xs text-muted-foreground">
-          {table.getFilteredRowModel().rows.length} dari {rows.length} user
+        <Select
+          value={departmentFilter}
+          onValueChange={(v) => {
+            setColumnFilters((prev) => [
+              ...prev.filter((f) => f.id !== "departmentName"),
+              ...(v && v !== "semua"
+                ? [{ id: "departmentName", value: v }]
+                : []),
+            ]);
+          }}
+        >
+          <SelectTrigger className="h-8 w-48" aria-label="Filter departemen">
+            <SelectValue placeholder="Semua departemen" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="semua">Semua departemen</SelectItem>
+              {departmentNames.map((d) => (
+                <SelectItem key={d} value={d}>
+                  {d}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        <Button
+          size="sm"
+          className="ml-auto"
+          onClick={() => {
+            setEditing(null);
+            setDialogOpen(true);
+          }}
+        >
+          <Plus className="mr-1.5 size-4" />
+          Tambah
+        </Button>
+        <span className="text-xs text-muted-foreground">
+          {table.getFilteredRowModel().rows.length} dari {rows.length} karyawan
         </span>
       </div>
 
@@ -390,7 +444,7 @@ export function UsersManager({
                   colSpan={columns.length}
                   className="py-10 text-center text-muted-foreground"
                 >
-                  Tidak ada user yang cocok dengan filter.
+                  Tidak ada karyawan yang cocok dengan filter.
                 </TableCell>
               </TableRow>
             ) : (
@@ -411,12 +465,13 @@ export function UsersManager({
         </Table>
       </div>
 
-      <UserFormDialog
-        key={editing ? `edit-${editing.id}` : "closed"}
+      <EmployeeFormDialog
+        key={editing ? `edit-${editing.id}` : "create"}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        user={editing}
-        roles={roles}
+        employee={editing}
+        divisions={divisions}
+        departments={departments}
       />
     </div>
   );

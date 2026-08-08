@@ -75,7 +75,10 @@ export function CoaManager({ rows }: { rows: CoaRow[] }) {
           <TableBody>
             {tree.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
+                <TableCell
+                  colSpan={4}
+                  className="py-10 text-center text-muted-foreground"
+                >
                   Belum ada akun — buat akun pertama.
                 </TableCell>
               </TableRow>
@@ -96,7 +99,11 @@ export function CoaManager({ rows }: { rows: CoaRow[] }) {
       </div>
 
       <CoaFormDialog
-        key={editing ? `edit-${editing.id}` : `create-${addingParent?.id ?? "root"}`}
+        key={
+          editing
+            ? `edit-${editing.id}`
+            : `create-${addingParent?.id ?? "root"}`
+        }
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         account={editing}

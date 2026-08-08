@@ -29,18 +29,21 @@ model User {
   forecasts  Forecast[]    @relation("ForecastCreator")
   importBatches ImportBatch[] @relation("ImportCreator")
   schedules  Schedule[]    @relation("ScheduleCreator")
+  employee   Employee?     @relation("UserEmployee")
 
   @@schema("accounting")
   @@map("users")
 }
 
 model Division {
-  id        String   @id @default(uuid()) @db.Uuid
+  id         String   @id @default(uuid()) @db.Uuid
   name      String   @unique
   createdAt DateTime @default(now()) @map("created_at")
   users     User[]
   roles     Role[]
   costCenters CostCenter[]
+  departments Department[]
+  employees Employee[]
 
   @@schema("accounting")
   @@map("divisions")
@@ -336,4 +339,73 @@ model Schedule {
   @@index([createdBy])
   @@schema("accounting")
   @@map("schedules")
+}
+
+/// Departemen — sub-divisi dalam divisi organisasi.
+model Department {
+  id         String   @id @default(uuid()) @db.Uuid
+  name       String
+  divisionId String?  @map("division_id") @db.Uuid
+  division   Division? @relation(fields: [divisionId], references: [id], onDelete: SetNull)
+  employees  Employee[]
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([name, divisionId])
+  @@schema("accounting")
+  @@map("departments")
+}
+
+/// Karyawan — data personil yang terhubung ke user (opsional) + divisi/departemen.
+model Employee {
+  id           String     @id @default(uuid()) @db.Uuid
+  userId       String?    @unique @map("user_id") @db.Uuid
+  user         User?      @relation("UserEmployee", fields: [userId], references: [id], onDelete: SetNull)
+  name         String
+  email        String?
+  divisionId   String?    @map("division_id") @db.Uuid
+  division     Division?  @relation(fields: [divisionId], references: [id], onDelete: SetNull)
+  departmentId String?    @map("department_id") @db.Uuid
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  position     String?
+  hireDate     DateTime?  @map("hire_date")
+  isActive     Boolean    @default(true) @map("is_active")
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@schema("accounting")
+  @@map("employees")
+}
+
+/// Produk — daftar produk/layanan yang dijual.
+model Product {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  sku         String?  @unique
+  price       Decimal
+  currency    String   @default("IDR")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@schema("accounting")
+  @@map("products")
+}
+
+/// Perusahaan — multi-company support. defaultCompany=true untuk data awal.
+model Company {
+  id             String   @id @default(uuid()) @db.Uuid
+  name           String
+  address        String?
+  phone          String?
+  email          String?
+  website        String?
+  taxNumber      String?  @map("tax_number")
+  logo           String?
+  defaultCompany Boolean  @default(false) @map("default_company")
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@schema("accounting")
+  @@map("companies")
 }
