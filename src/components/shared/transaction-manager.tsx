@@ -24,7 +24,7 @@ import { submitForApproval } from "@/lib/actions/approvals";
 import { postJournalAction } from "@/lib/actions/ledger";
 import type { TransactionRow } from "@/lib/actions/transactions";
 import type { CostCenterRow } from "@/lib/cost-centers";
-import type { TransactionStatus } from "@/types/ledger";
+import type { TransactionStatus, TransactionTypeFase1 } from "@/types/ledger";
 
 export function TransactionManager({
   rows,
@@ -67,7 +67,8 @@ export function TransactionManager({
   }
 
   async function handleSubmit(row: TransactionRow) {
-    if (!confirm(`Ajukan transaksi "${row.description}" untuk persetujuan?`)) return;
+    if (!confirm(`Ajukan transaksi "${row.description}" untuk persetujuan?`))
+      return;
     const res = await submitForApproval(row.id);
     if (!res.ok) {
       toast.error(res.error);
@@ -78,7 +79,8 @@ export function TransactionManager({
   }
 
   async function handlePost(row: TransactionRow) {
-    if (!confirm(`Posting jurnal untuk transaksi "${row.description}"?`)) return;
+    if (!confirm(`Posting jurnal untuk transaksi "${row.description}"?`))
+      return;
     const res = await postJournalAction(row.id);
     if (!res.ok) {
       toast.error(res.error);
@@ -114,13 +116,20 @@ export function TransactionManager({
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                <SelectItem value="">Semua</SelectItem>
-                <SelectItem value="income">
-                  {TRANSACTION_TYPE_LABELS.income}
+                <SelectItem value="" className="text-muted-foreground">
+                  Semua tipe
                 </SelectItem>
-                <SelectItem value="expense">
-                  {TRANSACTION_TYPE_LABELS.expense}
-                </SelectItem>
+                {(
+                  Object.keys(TRANSACTION_TYPE_LABELS) as TransactionTypeFase1[]
+                ).map((s) => (
+                  <SelectItem
+                    key={s}
+                    value={s}
+                    className="text-muted-foreground"
+                  >
+                    {TRANSACTION_TYPE_LABELS[s]}
+                  </SelectItem>
+                ))}
               </SelectGroup>
             </SelectContent>
           </Select>
@@ -136,21 +145,33 @@ export function TransactionManager({
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                <SelectItem value="">Semua status</SelectItem>
-                {(Object.keys(TRANSACTION_STATUS_LABELS) as TransactionStatus[]).map(
-                  (s) => (
-                    <SelectItem key={s} value={s}>
-                      {TRANSACTION_STATUS_LABELS[s]}
-                    </SelectItem>
-                  ),
-                )}
+                <SelectItem value="" className="text-muted-foreground">
+                  Semua status
+                </SelectItem>
+                {(
+                  Object.keys(TRANSACTION_STATUS_LABELS) as TransactionStatus[]
+                ).map((s) => (
+                  <SelectItem
+                    key={s}
+                    value={s}
+                    className="text-muted-foreground"
+                  >
+                    {TRANSACTION_STATUS_LABELS[s]}
+                  </SelectItem>
+                ))}
               </SelectGroup>
             </SelectContent>
           </Select>
         </div>
       </div>
 
-      <TransactionsTable rows={filteredRows} onDelete={handleDelete} onEdit={openEdit} onSubmit={handleSubmit} onPost={handlePost} />
+      <TransactionsTable
+        rows={filteredRows}
+        onDelete={handleDelete}
+        onEdit={openEdit}
+        onSubmit={handleSubmit}
+        onPost={handlePost}
+      />
 
       <TransactionFormDialog
         key={editing ? `edit-${editing.id}` : "create"}
