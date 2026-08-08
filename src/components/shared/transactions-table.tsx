@@ -11,11 +11,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { TransactionRow } from "@/lib/actions/transactions";
-import { formatAmount, formatDate, formatIDR } from "@/lib/format";
-import type {
-  TransactionStatus,
-  TransactionTypeFase1,
-} from "@/types/ledger";
+import { formatDate, formatIDR } from "@/lib/format";
+import type { TransactionStatus, TransactionTypeFase1 } from "@/types/ledger";
 
 export const TRANSACTION_TYPE_LABELS: Record<TransactionTypeFase1, string> = {
   income: "Pemasukan",
@@ -49,7 +46,13 @@ export interface TransactionsTableProps {
   onPost: (row: TransactionRow) => void;
 }
 
-export function TransactionsTable({ rows, onDelete, onEdit, onSubmit, onPost }: TransactionsTableProps) {
+export function TransactionsTable({
+  rows,
+  onDelete,
+  onEdit,
+  onSubmit,
+  onPost,
+}: TransactionsTableProps) {
   return (
     <div className="rounded-xl border bg-card">
       <Table>
@@ -88,9 +91,7 @@ export function TransactionsTable({ rows, onDelete, onEdit, onSubmit, onPost }: 
                 </TableCell>
                 <TableCell>
                   <Badge
-                    variant={
-                      row.type === "expense" ? "destructive" : "default"
-                    }
+                    variant={row.type === "expense" ? "destructive" : "default"}
                     className={
                       row.type === "income"
                         ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
@@ -104,8 +105,7 @@ export function TransactionsTable({ rows, onDelete, onEdit, onSubmit, onPost }: 
                   {row.description}
                 </TableCell>
                 <TableCell className="text-right whitespace-nowrap">
-                  {formatAmount(row.amount)}{" "}
-                  <span className="text-muted-foreground">{row.currency}</span>
+                  {formatIDR(row.amount)}{" "}
                 </TableCell>
                 <TableCell className="text-right whitespace-nowrap">
                   {formatIDR(row.baseAmount)}
