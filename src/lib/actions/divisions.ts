@@ -57,7 +57,7 @@ export async function createDivision(name: string): Promise<ActionResult> {
       return { ok: false, error: "Nama divisi maksimal 100 karakter" };
 
     const { error } = await db().then((s) =>
-      s.from("divisions").insert({ name: trimmed } as never),
+      s.from("divisions").insert({ id: crypto.randomUUID(), name: trimmed } as never),
     );
     if (error) return { ok: false, error: guardErr(error) };
     revalidatePath(PATH);
