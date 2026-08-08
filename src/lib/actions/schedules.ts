@@ -139,6 +139,8 @@ export async function createSchedule(
         format: input.format,
         enabled: input.enabled,
         created_by: userId,
+        updated_at: new Date().toISOString(),
+      
       } as never),
     );
     if (error) return { ok: false, error: guardErr(error) };

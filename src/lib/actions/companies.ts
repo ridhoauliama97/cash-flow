@@ -146,6 +146,8 @@ export async function createCompany(input: CompanyInput): Promise<ActionResult> 
         website: input.website || null,
         tax_number: input.taxNumber || null,
         logo: input.logo || null,
+        updated_at: new Date().toISOString(),
+      
       } as never),
     );
     if (error) return { ok: false, error: guardErr(error) };

@@ -100,6 +100,8 @@ export async function createProduct(input: ProductInput): Promise<ActionResult> 
         price: input.price,
         currency: input.currency.trim(),
         is_active: input.isActive,
+        updated_at: new Date().toISOString(),
+      
       } as never),
     );
     if (error) return { ok: false, error: guardErr(error) };
