@@ -17,4 +17,6 @@ Package STANDALONE di subfolder `rebuild/` — root repo masih app Vite (di biar
 - Progres task: `.tmp/tasks/fase-1-rebuild/` di root repo (skill task-management)
 - Prisma client generator tipe baru (`prisma-client`, output `src/generated/prisma`) — jangan downgrade ke gaya lama tanpa alasan
 - shadcn/ui v4 memakai `@base-ui/react` (bukan Radix) — jangan menambah Provider per komponen secara manual tanpa cek pola yang ada
+- **Schema `accounting` sudah di-expose ke PostgREST** (`db_schema: "public, accounting"`). Bila schema baru dibuat, expose via Management API: `PATCH https://api.supabase.com/v1/projects/{ref}/postgrest` body `{"db_schema":"public, <schema>"}` (endpoint `{ref}/postgrest`, BUKAN `/config/postgrest`). Tanpa ini semua query via supabase-js gagal `Invalid schema: <schema>`.
+- Kolom DB dan Prisma model adalah sumber kebenaran — server action TIDAK boleh select kolom yang tidak ada di keduanya (contoh: `permissions.description` tidak pernah ada → jangan dipakai).
 

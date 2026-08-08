@@ -13,7 +13,6 @@ export interface PermissionRow {
   id: string;
   module: string;
   action: string;
-  description: string | null;
 }
 
 export interface PermissionMatrix {
@@ -41,7 +40,7 @@ export async function getPermissionMatrix(): Promise<ActionResult<PermissionMatr
     const s = await db();
     const [{ data: perms, error: permErr }, { data: roles, error: roleErr }, { data: rps, error: rpErr }] =
       await Promise.all([
-        s.from("permissions").select("id, module, action, description").order("module").order("action"),
+        s.from("permissions").select("id, module, action").order("module").order("action"),
         s.from("roles").select("id, name, level").order("name"),
         s.from("role_permissions").select("role_id, permission_id"),
       ]);
@@ -61,7 +60,6 @@ export async function getPermissionMatrix(): Promise<ActionResult<PermissionMatr
           id: p.id as string,
           module: p.module as string,
           action: p.action as string,
-          description: p.description as string | null,
         })),
         roles: (roles ?? []).map((r) => ({
           id: r.id as string,

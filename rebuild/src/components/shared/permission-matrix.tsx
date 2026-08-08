@@ -145,9 +145,6 @@ function ModuleRows({
         <TableRow key={perm.id}>
           <TableCell>
             <span className="capitalize">{ACTION_LABELS[perm.action] ?? perm.action}</span>
-            {perm.description && (
-              <div className="text-xs text-muted-foreground">{perm.description}</div>
-            )}
           </TableCell>
           {roles.map((role) => {
             const locked = role.id === superAdminRoleId;
