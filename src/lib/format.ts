@@ -1,98 +1,44 @@
-import { CURRENCY_SYMBOLS, type CurrencyCode } from "@/types";
+// Helper format numerik & tanggal untuk UI — PURE (tanpa React/DB),
+// dipakai bersama oleh dialog & tabel transaksi.
 
-/** Compact money format for a currency. */
-export function formatMoney(
-  amount: number,
-  currency: CurrencyCode,
-  compact = false,
-): string {
-  if (!Number.isFinite(amount)) return "—";
-  const abs = Math.abs(amount);
-  const symbol = CURRENCY_SYMBOLS[currency];
+const idrFormatter = new Intl.NumberFormat("id-ID", {
+  maximumFractionDigits: 2,
+});
 
-  if (compact && abs >= 1_000_000)
-    return `${symbol}${(amount / 1_000_000).toFixed(1)}M`;
-  if (compact && abs >= 1_000)
-    return `${symbol}${(amount / 1_000).toFixed(1)}K`;
-
-  const digits = currency === "IDR" || currency === "JPY" ? 0 : 2;
-  if (currency === "IDR") {
-    return `${symbol}${amount.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
-  }
-  if (currency === "JPY") {
-    return `${symbol}${amount.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
-  }
-  return `${symbol}${amount.toLocaleString("en-US", {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  })}`;
+/** Format angka gaya Indonesia: 1.580.000,5 (tanpa simbol mata uang). */
+export function formatAmount(n: number): string {
+  return idrFormatter.format(n);
 }
 
-/** Signed money for deltas (e.g. "+Rp 1.2M" / "−Rp 300K"). */
-export function formatSigned(
-  amount: number,
-  currency: CurrencyCode,
-  compact = false,
-): string {
-  if (amount > 0) return `+${formatMoney(amount, currency, compact)}`;
-  if (amount < 0) return `−${formatMoney(Math.abs(amount), currency, compact)}`;
-  return formatMoney(0, currency, compact);
+/** Format angka dengan prefiks "Rp ". */
+export function formatIDR(n: number): string {
+  return `Rp ${formatAmount(n)}`;
 }
 
-export function formatPercent(value: number, digits = 1): string {
-  if (!Number.isFinite(value)) return "—";
-  return `${value >= 0 ? "+" : ""}${value.toFixed(digits)}%`;
-}
+const dateFormatter = new Intl.DateTimeFormat("id-ID", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  timeZone: "UTC",
+});
 
-/** Unsigned percentage (for values that are not deltas). */
-export function formatPercentPlain(value: number, digits = 1): string {
-  if (!Number.isFinite(value)) return "—";
-  return `${value.toFixed(digits)}%`;
-}
-
-export function formatNumber(value: number): string {
-  return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
-}
-
+/**
+ * Format tanggal ISO (dari kolom TIMESTAMP) jadi tanggal Indonesia.
+ * Ambil bagian tanggal (YYYY-MM-DD) dari string mentah lalu format sebagai
+ * UTC agar tidak bergeser oleh timezone server/client.
+ */
 export function formatDate(iso: string): string {
-  const d = new Date(iso.length === 10 ? `${iso}T12:00:00` : iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  const datePart = iso.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return iso;
+  const [y, m, d] = datePart.split("-").map(Number);
+  return dateFormatter.format(new Date(Date.UTC(y, m - 1, d)));
 }
 
-export function formatDateShort(iso: string): string {
-  const d = new Date(`${iso}T12:00:00`);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
-export function formatMonthKey(key: string): string {
-  const [y, m] = key.split("-").map(Number);
-  return new Date(y, (m ?? 1) - 1, 1).toLocaleDateString("en-US", {
-    month: "short",
-    year: "numeric",
-  });
-}
-
-export function formatDateTime(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-export function formatDurationDays(days: number): string {
-  if (days <= 0) return "today";
-  if (days === 1) return "1 day";
-  if (days < 30) return `${days} days`;
-  if (days < 365) return `${Math.round(days / 30)} months`;
-  return `${(days / 365).toFixed(1)} years`;
+/** Tanggal lokal hari ini sebagai "YYYY-MM-DD" (default input type=date). */
+export function todayISO(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }

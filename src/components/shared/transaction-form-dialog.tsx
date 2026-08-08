@@ -1,6 +1,10 @@
-import { useState } from "react"
-import { toast } from "sonner"
-import { Button } from "@/components/ui/button"
+"use client";
+
+import { useState } from "react";
+import type { FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,208 +12,206 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { CurrencySelect } from "@/components/shared/currency-select"
-import { useApp } from "@/context/app-context"
-import { todayISO } from "@/lib/utils"
-import type { CurrencyCode, Transaction, TransactionDraft, TransactionType } from "@/types"
+} from "@/components/ui/select";
+import { createTransactionAction } from "@/lib/actions/transactions";
+import type { CostCenterRow } from "@/lib/cost-centers";
+import {
+  convert,
+  FALLBACK_RATES_PER_USD,
+  ratesForHome,
+} from "@/lib/currency-rates";
+import { formatIDR, todayISO } from "@/lib/format";
+import { CURRENCIES, type Currency } from "@/types/ledger";
+import type { TransactionDraft } from "@/lib/services/transactions";
 
-export interface TransactionFormProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  transaction?: Transaction | null // edit mode when provided
-  defaultType?: TransactionType
+export interface TransactionFormDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** Semua cost center (untuk pilihan di form; kosong = tanpa cost center). */
+  costCenters: CostCenterRow[];
 }
 
-const EMPTY: TransactionDraft = {
-  date: todayISO(),
-  type: "revenue",
-  description: "",
-  amount: 0,
-  currency: "USD",
-  category: "Client Services",
-  client: "",
-  region: "",
-  product: "",
-  department: "",
-  project: "",
-  paymentMethod: "",
-}
+// Kurs untuk preview estimasi IDR: static fallback (client-safe, tanpa fetch).
+const IDR_RATES = ratesForHome(FALLBACK_RATES_PER_USD, "IDR");
 
-/**
- * Create/edit transaction dialog. In edit mode the original currency
- * and base amount are preserved (base amount recomputed on save).
- */
-export function TransactionFormDialog({ open, onOpenChange, transaction, defaultType = "revenue" }: TransactionFormProps) {
-  const { addTransactions, updateTransaction, homeCurrency, convertAmount } = useApp()
-  const [draft, setDraft] = useState<TransactionDraft>(
-    transaction
-      ? {
-          date: transaction.date,
-          type: transaction.type,
-          description: transaction.description,
-          amount: transaction.amount,
-          currency: transaction.currency,
-          category: transaction.category,
-          client: transaction.client ?? "",
-          region: transaction.region ?? "",
-          product: transaction.product ?? "",
-          department: transaction.department ?? "",
-          project: transaction.project ?? "",
-          paymentMethod: transaction.paymentMethod ?? "",
-        }
-      : { ...EMPTY, type: defaultType, currency: homeCurrency },
-  )
-  const [saving, setSaving] = useState(false)
+export function TransactionFormDialog({
+  open,
+  onOpenChange,
+  costCenters,
+}: TransactionFormDialogProps) {
+  const router = useRouter();
+  // State diinisialisasi dari default; dialog di-remount via `key` dari
+  // parent (pola CoaFormDialog) — hindari setState sinkron dalam effect.
+  const [type, setType] = useState("income");
+  const [date, setDate] = useState(todayISO());
+  const [description, setDescription] = useState("");
+  const [amount, setAmount] = useState("");
+  const [currency, setCurrency] = useState("IDR");
+  const [costCenterId, setCostCenterId] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  const set = (patch: Partial<TransactionDraft>) => setDraft((d) => ({ ...d, ...patch }))
+  const parsedAmount = Number(amount);
+  const basePreview =
+    Number.isFinite(parsedAmount) && parsedAmount > 0
+      ? convert(parsedAmount, currency as Currency, "IDR", IDR_RATES)
+      : null;
 
-  const valid = draft.description.trim().length > 0 && draft.amount > 0
-
-  const save = async () => {
-    if (!valid) return
-    setSaving(true)
-    try {
-      if (transaction) {
-        await updateTransaction({
-          ...transaction,
-          ...draft,
-          baseAmount: Math.round(convertAmount(draft.amount, draft.currency)),
-          amount: Number(draft.amount),
-        } as Transaction)
-        toast.success("Transaction updated")
-      } else {
-        await addTransactions([{ ...draft, amount: Number(draft.amount) }])
-        toast.success("Transaction added")
-        setDraft({ ...EMPTY, type: draft.type, currency: homeCurrency })
-      }
-      onOpenChange(false)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to save transaction")
-    } finally {
-      setSaving(false)
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    const draft: TransactionDraft = {
+      type,
+      date,
+      description,
+      amount: parsedAmount,
+      currency,
+      costCenterId: costCenterId === "" ? null : costCenterId,
+    };
+    const res = await createTransactionAction(draft);
+    setBusy(false);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
     }
+    toast.success("Transaksi dibuat");
+    onOpenChange(false);
+    router.refresh();
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{transaction ? "Edit transaction" : "Add transaction"}</DialogTitle>
+          <DialogTitle>Tambah Transaksi</DialogTitle>
           <DialogDescription>
-            Amounts are converted to {homeCurrency} automatically at the current exchange rate.
+            Transaksi kas manual — tersimpan sebagai draft sampai diposting.
           </DialogDescription>
         </DialogHeader>
-
-        <div className="grid gap-4 py-2">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="tx-date">Date</Label>
-              <Input id="tx-date" type="date" value={draft.date} onChange={(e) => set({ date: e.target.value })} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Type</Label>
-              <Select value={draft.type} onValueChange={(v) => set({ type: v as TransactionType })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="revenue">Revenue</SelectItem>
-                  <SelectItem value="expense">Expense</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        <form onSubmit={handleSubmit} className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="txn-type">Tipe</Label>
+            <Select
+              value={type}
+              onValueChange={(v) => {
+                if (v !== null) setType(v);
+              }}
+            >
+              <SelectTrigger className="w-full" id="txn-type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="income">Pemasukan</SelectItem>
+                  <SelectItem value="expense">Pengeluaran</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="tx-desc">Description</Label>
+          <div className="grid gap-2">
+            <Label htmlFor="txn-date">Tanggal</Label>
             <Input
-              id="tx-desc"
-              placeholder="e.g. Monthly retainer — Acme"
-              value={draft.description}
-              onChange={(e) => set({ description: e.target.value })}
+              id="txn-date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
             />
           </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="tx-amount">Amount</Label>
-              <Input
-                id="tx-amount"
-                type="number"
-                min={0}
-                step="any"
-                placeholder="0.00"
-                value={draft.amount || ""}
-                onChange={(e) => set({ amount: Number(e.target.value) })}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Currency</Label>
-              <CurrencySelect value={draft.currency as CurrencyCode} onChange={(c) => set({ currency: c })} />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="tx-category">Category</Label>
+          <div className="grid gap-2">
+            <Label htmlFor="txn-description">Deskripsi</Label>
             <Input
-              id="tx-category"
-              placeholder="e.g. Client Services"
-              value={draft.category}
-              onChange={(e) => set({ category: e.target.value })}
+              id="txn-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Mis. Penjualan tunai"
+              required
             />
           </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="tx-client">Client</Label>
-              <Input id="tx-client" value={draft.client ?? ""} onChange={(e) => set({ client: e.target.value })} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="tx-product">Product</Label>
-              <Input id="tx-product" value={draft.product ?? ""} onChange={(e) => set({ product: e.target.value })} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="tx-region">Region</Label>
-              <Input id="tx-region" value={draft.region ?? ""} onChange={(e) => set({ region: e.target.value })} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="tx-project">Project</Label>
-              <Input id="tx-project" value={draft.project ?? ""} onChange={(e) => set({ project: e.target.value })} />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="tx-notes">Notes</Label>
-            <Textarea
-              id="tx-notes"
-              rows={2}
-              value={draft.notes ?? ""}
-              onChange={(e) => set({ notes: e.target.value })}
-              placeholder="Optional"
+          <div className="grid gap-2">
+            <Label htmlFor="txn-amount">Jumlah</Label>
+            <Input
+              id="txn-amount"
+              type="number"
+              inputMode="decimal"
+              min="0"
+              step="any"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0"
+              required
             />
+            <p className="text-xs text-muted-foreground">
+              Nilai IDR (estimasi):{" "}
+              {basePreview !== null ? formatIDR(basePreview) : "—"}
+            </p>
           </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={save} disabled={!valid || saving}>
-            {saving ? "Saving…" : transaction ? "Save changes" : "Add transaction"}
-          </Button>
-        </DialogFooter>
+          <div className="grid gap-2">
+            <Label htmlFor="txn-currency">Mata uang</Label>
+            <Select
+              value={currency}
+              onValueChange={(v) => {
+                if (v !== null) setCurrency(v);
+              }}
+            >
+              <SelectTrigger className="w-full" id="txn-currency">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {CURRENCIES.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="txn-cost-center">Cost center</Label>
+            <Select
+              value={costCenterId}
+              onValueChange={(v) => setCostCenterId(v ?? "")}
+            >
+              <SelectTrigger className="w-full" id="txn-cost-center">
+                <SelectValue placeholder="Tanpa cost center" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="">Tanpa cost center</SelectItem>
+                  {costCenters.map((cc) => (
+                    <SelectItem key={cc.id} value={cc.id}>
+                      {cc.code} · {cc.name}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
+              Batal
+            </Button>
+            <Button type="submit" disabled={busy}>
+              {busy ? "Menyimpan…" : "Buat"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

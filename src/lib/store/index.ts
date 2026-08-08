@@ -1,70 +1,28 @@
-import type {
-  Bill,
-  Budget,
-  CachedRates,
-  Invoice,
-  Profile,
-  ReportSchedule,
-  Transaction,
-} from "@/types"
-import { localStore } from "@/lib/store/local"
-import { createSupabaseStore } from "@/lib/store/supabase"
-import { createClient, type SupabaseClient } from "@supabase/supabase-js"
+import { createBrowserClient } from "@supabase/ssr";
 
-export interface Store {
-  mode: "local" | "supabase"
-  getProfile(): Promise<Profile>
-  saveProfile(profile: Profile): Promise<void>
-  getTransactions(): Promise<Transaction[]>
-  addTransactions(txs: Transaction[]): Promise<void>
-  updateTransaction(tx: Transaction): Promise<void>
-  deleteTransactions(ids: string[]): Promise<void>
-  getInvoices(): Promise<Invoice[]>
-  addInvoices(invs: Invoice[]): Promise<void>
-  updateInvoice(inv: Invoice): Promise<void>
-  deleteInvoices(ids: string[]): Promise<void>
-  getBills(): Promise<Bill[]>
-  addBills(bills: Bill[]): Promise<void>
-  updateBill(bill: Bill): Promise<void>
-  deleteBills(ids: string[]): Promise<void>
-  getBudgets(): Promise<Budget[]>
-  upsertBudgets(budgets: Budget[]): Promise<void>
-  deleteBudgets(ids: string[]): Promise<void>
-  getSchedules(): Promise<ReportSchedule[]>
-  upsertSchedule(s: ReportSchedule): Promise<void>
-  deleteSchedule(id: string): Promise<void>
-  getRates(): Promise<CachedRates | null>
-  saveRates(r: CachedRates): Promise<void>
-}
-
-export interface AuthUser {
-  id: string
-  email: string
-  name?: string
-}
+export type StoreMode = "local" | "supabase";
 
 /**
- * Resolve the active store implementation.
- * - Supabase mode: VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY configured
- * - Local mode: everything else (demo data in localStorage)
+ * Mode dipilih SEKALI saat module load (pola repo lama):
+ * - "supabase": NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY ter-set
+ * - "local": fallback demo data di localStorage
  */
-export function resolveStore(): Store {
-  const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
-  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
-  if (url && anonKey) {
-    return createSupabaseStore(url, anonKey)
-  }
-  return localStore
+export function resolveStoreMode(): StoreMode {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  return url && anonKey ? "supabase" : "local";
 }
 
-let supabaseClientSingleton: SupabaseClient | null = null
+let browserClientSingleton: ReturnType<typeof createBrowserClient> | null = null;
 
-/** Raw Supabase client (auth etc.) — null when Supabase is not configured. */
-export function getSupabaseClient(): SupabaseClient | null {
-  if (supabaseClientSingleton) return supabaseClientSingleton
-  const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
-  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
-  if (!url || !anonKey) return null
-  supabaseClientSingleton = createClient(url, anonKey)
-  return supabaseClientSingleton
+/** Browser Supabase client (auth, RLS-scoped rows). null di mode local. */
+export function getSupabaseBrowserClient() {
+  if (resolveStoreMode() !== "supabase") return null;
+  if (!browserClientSingleton) {
+    browserClientSingleton = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+  }
+  return browserClientSingleton;
 }

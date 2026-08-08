@@ -1,2 +1,5 @@
 allowBuilds:
   core-js: true
+  "@prisma/engines": true
+  esbuild: true
+  prisma: true

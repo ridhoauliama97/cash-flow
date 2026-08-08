@@ -1,45 +1,55 @@
-# AGENTS.md
+# Cash-flow accounting (Next.js — Fase 1 MVP)
 
-Cash-flow dashboard: Vite + React 19 + TS (strict) + Tailwind v4 + Recharts v3, shadcn/ui-style components. Single package, pnpm only (`bun` fails to write the lockfile on some filesystems).
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
+
+Sistem akuntansi dari `PRD.md`: Next.js (App Router) + TypeScript strict + Tailwind v4 + shadcn/ui v4 (Base UI) + Prisma 7 + Supabase. Package tunggal di root repo ini. App Vite lama dipindah ke `legacy/` (referensi saja, tidak dibangun oleh CI).
 
 ## Commands
 
 ```bash
-pnpm exec tsc -b        # typecheck (noUnusedLocals/Parameters on — unused imports FAIL)
-pnpm exec vitest run    # unit tests (node env, only src/**/*.test.ts)
-pnpm exec vitest run src/lib/analytics/aging.test.ts   # single test file
-pnpm lint               # oxlint (only rules-of-hooks error; many pre-existing warnings — don't chase them)
-pnpm build              # tsc -b + vite build (CI order: tsc -> lint -> vitest -> build)
-pnpm dev                # dev server on :5173
+pnpm dev          # dev server :3000 (Supabase mode bila .env terisi, else local/demo)
+pnpm typecheck    # tsc --noEmit (noUnusedLocals/Parameters on)
+pnpm lint         # eslint (rule React 19 set-state-in-effect adalah ERROR)
+pnpm test         # vitest (node env, src/**/*.test.ts — hanya unit test pure libs)
+pnpm build        # next build (CI order: typecheck -> lint -> test -> build)
 ```
 
-Supabase CLI is at `~/.supabase/bin/supabase` (not on PATH). Migrations:
-
-```bash
-export SUPABASE_ACCESS_TOKEN="<sbp_ token>"
-~/.supabase/bin/supabase db push   # project is linked (uyygrpyylyzqlqjguikx); do NOT pass --project-ref, it errors
-```
-
-Edge function deploy (scheduled report delivery): `supabase functions deploy report-delivery --no-verify-jwt` (see `supabase/functions/report-delivery/index.ts`).
+Supabase CLI ada di `~/.supabase/bin/supabase` (bukan di PATH). Migrasi schema = Prisma (`prisma/` + `prisma.config.ts`), seed `pnpm db:seed` (idempotent).
 
 ## Architecture
 
-- **Single source of truth**: `src/context/app-context.tsx` `DataProvider`/`useApp()` — all data, CRUD, rates state. Pages never call the store directly.
-- **Store pattern**: `Store` interface in `src/lib/store/index.ts`; two implementations — `local.ts` (localStorage key `cashflow:db:v1`, demo mode) and `supabase.ts`. Mode is chosen **once at module load** from `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`. Any new entity must be added to BOTH stores + the `Database` interface in `src/types/index.ts` + `app-context.tsx` + `demo.ts`.
-- **Data loading**: DataProvider loads on mount AND on Supabase auth changes (`SIGNED_IN` → full reload with a version guard, `SIGNED_OUT` → state cleared). Login must not require a manual refresh — don't regress this.
-- **Analytics layer**: pure functions in `src/lib/analytics/*.ts` with colocated `*.test.ts` — the only unit-tested code. Keep pure (no React/DOM); keep business math here, not in pages.
-- **Currency**: amounts store the original currency + `baseAmount` converted to `homeCurrency` at build time via `convert()` in `src/lib/currency.ts`. Rates come from currencyapi with static fallback.
-- **Types**: domain types in `src/types/index.ts`. Transaction types are `"revenue" | "expense"` (NOT "income"). `erasableSyntaxOnly` is on — no TS enums; use `const` arrays + union types (see `CURRENCIES`, `TRANSACTION_TYPES`).
-- **UI**: `src/components/ui/*` are shadcn primitives; `src/components/shared/*` are app components; `src/components/charts/*` are Recharts wrappers. `TooltipProvider` is mounted once in `src/main.tsx` — don't add per-component providers.
-- **Routing**: `src/App.tsx` — routes, auth `Gate`, lazy-loaded pages.
+- **Client terpisah**: `src/lib/supabase/client.ts` (browser) dan `server.ts` (server, cookie-based) — jangan dipakai silang. Semua query melalui `.schema("accounting")` — schema sudah di-expose ke PostgREST (`db_schema: "public, accounting"`); bila ada schema baru, expose via Management API `PATCH /v1/projects/{ref}/postgrest` body `{"db_schema":"public, <schema>"}` (endpoint `{ref}/postgrest`, BUKAN `/config/postgrest`) — tanpa ini semua query gagal `Invalid schema: <schema>`.
+- **RBAC dinamis**: `src/lib/rbac.ts` — permission dibaca dari DB per request (`requirePermission`, `requireCanModifyData` untuk proteksi data Super Admin + trigger DB `accounting.protect_super_admin_data`). Server actions pola `ActionResult<T> = {ok:true,data?}|{ok:false,error}` + `revalidatePath`.
+- **Prisma 7**: tanpa `datasource.url` (URL dari env), driver adapter `@prisma/adapter-pg`, client generator tipe baru (`prisma-client`, output `src/generated/prisma`, gitignored). No TS enums (`erasableSyntaxOnly`) — const arrays + unions. `prisma migrate deploy` dari kosong gagal P3005 (DB berisi tabel app lama) — baseline manual: `prisma db execute --file <migration>` lalu `prisma migrate resolve --applied <name>`.
+- **UI**: `src/components/ui/*` shadcn primitives (Base UI, bukan Radix — jangan tambah Provider per komponen manual); `src/components/shared/*` komponen app. Dialog di-remount via `key` saat target berubah (hindari setState dalam effect — lint error). Base UI Select `onValueChange` memberi `string | null` — guard null.
+- **Kolom DB & Prisma model adalah sumber kebenaran** — server action TIDAK boleh select kolom yang tidak ada di keduanya.
+- **Routing**: `src/App.tsx` — routes, auth `Gate`... (berlaku untuk app Vite lama di `legacy/`, bukan repo ini).
+- Analitik murni di `src/lib/analytics/*` — hanya berlaku untuk app Vite lama (`legacy/`).
+
+## Supabase (proyek bersama dengan app Vite lama)
+
+- Proyek: `uyygrpyylyzqlqjguikx` — tabel app lama di schema `public` (jangan sentuh); SEMUA tabel sistem baru di schema `accounting`.
+- Migrasi SQL app lama + edge function `report-delivery` tetap di `supabase/` (jangan hapus — dipakai proyek yang sama). Schema `accounting` dikelola Prisma (`prisma/migrations`).
+- `supabase db push` untuk migrasi SQL: `export SUPABASE_ACCESS_TOKEN="<sbp_ token>"` lalu `~/.supabase/bin/supabase db push` (project sudah linked — jangan pass `--project-ref`).
+- Deploy edge function: `supabase functions deploy report-delivery --no-verify-jwt` (lihat `supabase/functions/report-delivery/index.ts`).
+- Seeding auth users: token column harus `''` (NULL crash GoTrue), `email_confirmed_at` jangan generated column. Admin: `ridhoauliama97@gmail.com` / `password` (ganti setelah login pertama).
 
 ## Repo quirks (hard-earned)
 
-- **Seeding auth users**: manually inserted `auth.users` rows crash GoTrue with NULL token columns — all token columns must be `''` strings, and `email_confirmed_at` must not be set as a generated column. Migrations 0002–0004 document this. Seeded admin: `ridhoauliama97@gmail.com` / `password` (change after first login).
-- **Migration workflow**: feature = SQL migration in `supabase/migrations/` (0001_init, 0005_bills, …) + type + both stores + context + demo data + tests. Push with the CLI above, then verify via the Supabase Management API SQL query endpoint if needed.
-- **CSV import** (`src/lib/csv.ts`): PapaParse; auto header detection + user column mapping + dedupe against existing rows (signature: date+description+amount+currency). Dates support US/EU formats. README's CSV section is stale (columns `account`/`income` no longer exist).
-- **Saved views** (`src/hooks/use-saved-views.ts`): persisted in localStorage `cash-flow:saved-views`, integrated in `FilterBar`.
-- **Demo data** (`src/lib/demo.ts`): deterministic (mulberry32), walks back 12 full months + current month from today; demo reset only in local mode.
-- **PRD.md**: draft spec (in Indonesian) for a FUTURE rebuild on Next.js + Prisma — the current repo is Vite + React. Don't implement its tables (chart_of_accounts, journal_entries, approvals, roles…) into this codebase without asking.
-- **.env**: gitignored, read only at build time (VITE_ prefix). Never commit it or any Supabase tokens.
-- Git workflow: direct commits to `main` (conventional style: `feat:`, `fix:`, `refactor:`), push; CI runs typecheck/lint/tests/build on push and PRs.
+- **.env**: gitignored, dibaca build time (NEXT_PUBLIC_ prefix). Never commit.
+- **PRD.md**: draft spec (Indonesia) untuk rebuild — rujukan fitur, bukan struktur tabel; jangan implement tabel PRD (chart_of_accounts, journal_entries, dst. — note: tabel ini JUSTru sudah diimplementasi di schema `accounting` sesuai PRD).
+- **Legacy app** (`legacy/`): app Vite lama (React + localStorage) — TIDAK dibangun CI, tidak dikembangkan. Hanya referensi pola UI/analitik.
+- **CI**: `.github/workflows/ci.yml` — typecheck/lint/test/build di root pada push & PR.
+- Git workflow: commit langsung ke `main` (conventional style: `feat:`, `fix:`, `refactor:`), push.
+
+## Progres task
+
+Task management (skill task-management): `.tmp/tasks/fase-1-rebuild/` — 18 subtask Fase 1, semua completed.

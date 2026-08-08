@@ -1,123 +1,64 @@
-# Cash Flow Dashboard
+# Cash Flow — Accounting (Next.js)
 
-A self-hosted financial analytics dashboard for solopreneurs and small businesses: revenue, expenses, cash flow, receivables aging, multi-currency support, forecasts, and scheduled PDF reports.
+Sistem akuntansi Fase 1 MVP dari `PRD.md`: Next.js (App Router) + TypeScript strict + Tailwind v4 + shadcn/ui v4 (Base UI) + Prisma 7 + Supabase. Package tunggal di root repo ini — app Vite lama dipindah ke `legacy/` (referensi pola UI/analitik, tidak dibangun CI).
 
-Runs out of the box with **deterministic demo data** (no configuration required). Optional [Supabase](https://supabase.com) integration adds auth + cloud persistence.
+Stack: Next.js (App Router) + TypeScript strict + Tailwind v4 + shadcn/ui v4 (Base UI) + Prisma 7 + Supabase.
 
-## Features
-
-- **Dashboard** — KPIs (revenue, expenses, net, cash balance) with period-over-period deltas and trend charts
-- **Revenue analytics** — monthly trend, revenue by category/currency, top clients
-- **Expense analytics** — category breakdown, budget vs actual, monthly trend
-- **Cash flow** — waterfall chart, net cash position, weekly spending pattern
-- **Receivables aging** — 5 aging buckets (current / 30 / 60 / 90 / 90+ days), overdue amounts, per-client breakdown
-- **Bills (AP)** — vendor bills tracker with the same lifecycle (unpaid / partial / paid) and aging as receivables
-- **Profitability** — MRR/ARR, burn rate, monthly profit & margin, dimension breakdown (client/region/project/department)
-- **Multi-currency** — 7 currencies (USD, EUR, GBP, JPY, AUD, SGD, IDR), home currency configurable (default **IDR**), live rates via [currencyapi.com](https://currencyapi.com) with offline fallback
-- **Transactions** — full CRUD, search, filters (category, type, date range, amount), CSV export
-- **CSV import** — bulk import with automatic category inference, header mapping, and template download
-- **Global search & notifications** — Cmd+K command palette, in-app notification center
-- **Saved views** — persist filter combinations per page
-- **Forecast** — 90-day trend + seasonality projection with confidence band
-- **Reports** — Profit & Loss, Balance Sheet, Cash Flow Statement with CSV/PDF export
-- **Schedules** — recurring report delivery (demo mode shows a delivery log; with Supabase, paired with the `report-delivery` edge function)
-- **Dark mode** — light/dark theme toggle, persisted
-
-## Tech Stack
-
-| Layer | Choice |
-| --- | --- |
-| Framework | React 19 + TypeScript (strict) + Vite |
-| Styling | Tailwind CSS v4 + shadcn/ui (Radix UI, neutral palette) |
-| Charts | Recharts v3 |
-| Backend (optional) | Supabase (Postgres + Auth + Edge Functions) |
-| CSV/PDF | PapaParse + jsPDF + autotable |
-| Routing / Theme | React Router v7 / next-themes |
-| Testing | Vitest (pure analytics logic) |
-
-## Getting Started
-
-> Note: `bun install` fails on some filesystems (EINVAL writing the lockfile) — use **pnpm**.
+## Commands (pnpm only — `bun` gagal menulis lockfile di sebagian filesystem)
 
 ```bash
-pnpm install
-pnpm dev        # start dev server
-pnpm build      # typecheck + production build
-pnpm lint       # oxlint
+pnpm dev          # dev server :3000
+pnpm typecheck    # tsc --noEmit (noUnusedLocals/Parameters on)
+pnpm lint         # eslint
+pnpm test         # vitest (node env, src/**/*.test.ts)
+pnpm build        # next build (CI order: typecheck -> lint -> test -> build)
 ```
 
-Then open http://localhost:5173 — the app boots with demo data immediately.
+## Setup Supabase
 
-## Environment Variables
+1. Copy `.env.example` ke `.env`, isi `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` (Project Settings → API). Tanpa keduanya, app berjalan di **mode local** (demo, localStorage).
+2. Client terpisah: `src/lib/supabase/client.ts` (browser) dan `src/lib/supabase/server.ts` (server, cookie-based) — jangan dipakai silang.
+3. Supabase CLI ada di `~/.supabase/bin/supabase` (tidak ada di PATH):
 
-Copy the following into a `.env` file at the project root (or your hosting provider's env settings). All are **optional** — the app works fully without them:
-
-| Variable | Purpose |
-| --- | --- |
-| `VITE_SUPABASE_URL` | Supabase project URL. When set (with the anon key), the app switches from local demo data to the cloud database and enables auth. |
-| `VITE_SUPABASE_ANON_KEY` | Supabase anon/publishable API key. |
-| `VITE_CURRENCY_API_KEY` | API key from currencyapi.com for live exchange rates (otherwise static fallback rates are used). Can also be entered at runtime in Settings → Exchange Rates. |
-
-The frontend only ever reads `VITE_`-prefixed variables at build time.
-
-## Supabase Setup (optional)
-
-1. Create a project at [supabase.com](https://supabase.com).
-2. Open **SQL Editor** and run the migration: `supabase/migrations/0001_init.sql` — creates `profiles`, `transactions`, `invoices`, `budgets`, `report_schedules` (with RLS) plus a trigger that provisions a profile row on signup.
-3. Set the two `VITE_SUPABASE_*` env vars and rebuild.
-4. **Scheduled reports** (optional): deploy the edge function so schedules send email reports:
-   ```bash
-   supabase functions deploy report-delivery --no-verify-jwt
-   ```
-   Configure the cron invocation (e.g. via `pg_cron` on Supabase or an external scheduler) and set the `REPORT_MAIL_FROM` secret.
-5. Create the first user via the login screen — the trigger creates their profile automatically.
-
-## CSV Import Format
-
-The import page offers a **template download** (matches the expected columns exactly). Required columns: `date`, `type`, `amount`, `currency`. Everything else is optional:
-
-```
-date,type,description,amount,currency,category,client,region,project,department
-2026-08-01,revenue,"Monthly retainer — Acme Inc",2500,USD,"Client Services",Acme,US,"Website Retainer",Product
-2026-08-03,expense,"Figma subscription",15,USD,"Software & Subscriptions",,,,Engineering
+```bash
+export SUPABASE_ACCESS_TOKEN="<sbp_ token>"   # token tersimpan di ~/.supabase/access-token
+~/.supabase/bin/supabase link --project-ref uyygrpyylyzqlqjguikx
 ```
 
-- `type`: `revenue` | `expense`
-- `currency`: `IDR` | `USD` | `EUR` | `GBP` | `JPY` | `AUD` | `SGD`
-- `category`: optional — inferred automatically from the description when missing
-- `client`/`region`/`project`/`department`: optional dims (included in reports)
-- `amount`: numeric; decimals only for non-IDR currencies
-- `date`: `YYYY-MM-DD` (US/EU formats also auto-detected)
+> Project sudah ter-link (ref `uyygrpyylyzqlqjguikx`, project yang sama dengan app Vite lama). Saat `db push`, jangan beri flag `--project-ref` — akan error.
 
-## Project Structure
+> **Koneksi DB**: selalu pakai pooler `aws-0-ap-southeast-1.pooler.supabase.com:5432` — host direct `db.<ref>.supabase.co` hanya resolve IPv6 (gagal `P1001` di jaringan tanpa IPv6).
+
+## Struktur (berjalan)
 
 ```
 src/
-├── components/
-│   ├── charts/      # Recharts wrappers (area, donut, waterfall, forecast, balance, compare…)
-│   ├── layout/      # sidebar, topbar, mode badge
-│   ├── shared/      # KPI card, filter bar, currency select, form dialogs, transactions table, global search, notification menu
-│   └── ui/          # shadcn/ui primitives
-├── context/         # DataProvider + useApp() (all data/CRUD/rates state)
-├── hooks/           # theme, notifications, saved views, schedule delivery
+├── app/             # App Router (layout, halaman)
+├── components/ui/   # shadcn/ui primitives (Base UI, bukan Radix)
 ├── lib/
-│   ├── analytics/   # pure, unit-tested analytics (KPIs, aging, waterfall, forecast, compare…)
-│   ├── store/       # local (demo) + supabase stores, resolver
-│   ├── currency.ts  # rates, conversion, fallback rates
-│   ├── csv.ts       # parse + category inference
-│   ├── demo.ts      # deterministic demo dataset
-│   ├── reports.ts   # P&L / balance sheet / cash flow + CSV/PDF export
-│   ├── format.ts    # money/date/number formatting
-│   └── utils.ts
-├── pages/           # 12 routed pages + login
-├── types/           # domain types, filters, currencies
-└── App.tsx          # routes, auth gate, lazy-loaded pages
+│   ├── supabase/    # client.ts (browser) + server.ts (server cookies)
+│   └── store/       # mode resolver (local vs supabase) + localStorage adapter
+└── generated/prisma # output prisma generate (gitignored)
 ```
 
-## Testing
+## Prisma 7
+
+- Generator tipe baru `prisma-client` → output `src/generated/prisma` (gitignored).
+- Build scripts Prisma di-approve via `allowBuilds` di `pnpm-workspace.yaml` — jangan dihapus.
+- **Semua tabel sistem ada di schema `accounting`** (bukan `public`) — `public` dipakai app Vite lama di project Supabase yang sama (`transactions`, `invoices`, `bills`, dll). Jangan membuat tabel di `public`.
+- `@@check` (constraint) tidak didukung Prisma 7 → check constraints ditulis manual sebagai SQL di akhir migration.
+- `prisma migrate deploy` dari kosong bisa gagal `P3005` (database berisi tabel app lama) → aplikasikan via `prisma db execute --file <migration>` lalu `prisma migrate resolve --applied <name>` (sudah tercatat, cukup untuk kasus baru yang serupa).
+- Generated client butuh runtime `@prisma/client` + driver adapter `@prisma/adapter-pg` (baris `datasource.url` tidak ada di schema — URL datang dari `prisma.config.ts`/env).
+
+## Seed data (roles, permission, divisions, CoA)
+
+Men-seed data master Fase 1 secara idempotent (upsert / `skipDuplicates`):
 
 ```bash
-pnpm exec vitest run
+pnpm db:seed                       # prisma db seed -> tsx prisma/seed.ts (baca DATABASE_URL dari .env)
+SEED_ADMIN_EMAIL=<email> pnpm db:seed   # opsional: assign role "Super Admin" ke user tsb
 ```
 
-100 unit tests cover the pure analytics layer: periods, filters/accrual, KPIs, aging buckets, waterfall, forecasting, profitability, MRR/burn, comparisons, notifications, saved views, currency conversion, and CSV parsing.
+- 4 divisions, 6 roles, 42 permissions, permission matrix per role (matriks lengkap: `docs/permission-matrix.md`), 12 chart of accounts default.
+- Bootstrap admin: user profil dibuat otomatis saat login (trigger `handle_new_user`). Untuk user yang **sudah ada** di `auth.users` (mis. admin app lama), migration `0005_backfill_profiles` membuat profilnya sekaligus assign Super Admin ke `ridhoauliama97@gmail.com`. Setelah itu `SEED_ADMIN_EMAIL` cukup dipakai saat mem-promote user baru.
+- **Pelindung data Super Admin** (migration 0004): UPDATE/DELETE pada data milik Super Admin hanya boleh oleh Super Admin itu sendiri — ditegakkan trigger di level DB (berlaku juga saat RLS di-bypass).
