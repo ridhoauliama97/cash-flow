@@ -1,6 +1,6 @@
 "use server";
 
-import { requirePermission, PermissionError } from "@/lib/rbac";
+import { requirePermission } from "@/lib/rbac";
 import { createClient } from "@/lib/supabase/server";
 import {
   aggregateMonthly,
@@ -9,6 +9,7 @@ import {
   type MonthRow,
   type Totals,
 } from "@/lib/analytics";
+import { guardErr } from "@/lib/utils/guard-err";
 
 export type ActionResult<T = undefined> =
   | { ok: true; data?: T }
@@ -24,10 +25,6 @@ async function db() {
   return supabase.schema("accounting");
 }
 
-function guardErr(e: unknown): string {
-  if (e instanceof PermissionError) return e.message;
-  return e instanceof Error ? e.message : String(e);
-}
 
 /**
  * Ringkasan bulanan untuk analitik: income vs expense per bulan (IDR).

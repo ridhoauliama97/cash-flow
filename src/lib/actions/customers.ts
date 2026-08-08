@@ -1,13 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requirePermission, PermissionError } from "@/lib/rbac";
+import { requirePermission } from "@/lib/rbac";
 import { createClient } from "@/lib/supabase/server";
 import {
   validateCustomer,
   type CustomerInput,
   type CustomerRow,
 } from "@/lib/customers";
+import { guardErr } from "@/lib/utils/guard-err";
 
 export type ActionResult<T = undefined> =
   | { ok: true; data?: T }
@@ -30,10 +31,6 @@ async function db() {
   return supabase.schema("accounting");
 }
 
-function guardErr(e: unknown): string {
-  if (e instanceof PermissionError) return e.message;
-  return e instanceof Error ? e.message : String(e);
-}
 
 /** List semua customer. */
 export async function listCustomers(): Promise<ActionResult<CustomerRow[]>> {

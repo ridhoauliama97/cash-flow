@@ -1,9 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requirePermission, PermissionError } from "@/lib/rbac";
+import { requirePermission } from "@/lib/rbac";
 import { createClient } from "@/lib/supabase/server";
 import { detectCoaCycle, validateCoa, type CoaInput, type CoaRow } from "@/lib/coa";
+import { guardErr } from "@/lib/utils/guard-err";
 
 export type ActionResult<T = undefined> =
   | { ok: true; data?: T }
@@ -28,12 +29,6 @@ async function db() {
   return supabase.schema("accounting");
 }
 
-function guardErr(e: unknown): string {
-  if (e instanceof PermissionError) return e.message;
-  const msg = e instanceof Error ? e.message : String(e);
-  if (msg.includes("23505")) return "Kode akun sudah dipakai";
-  return msg;
-}
 
 /** List semua akun (flat) — page membangun tree via buildCoaTree. */
 export async function listCoa(): Promise<ActionResult<CoaRow[]>> {

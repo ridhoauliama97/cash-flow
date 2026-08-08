@@ -2,11 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import {
-  PermissionError,
   requireCanModifyData,
   requirePermission,
 } from "@/lib/rbac";
 import { createClient } from "@/lib/supabase/server";
+import { guardErr } from "@/lib/utils/guard-err";
 
 export type ActionResult<T = undefined> =
   | { ok: true; data?: T }
@@ -86,12 +86,6 @@ async function db() {
   return supabase.schema("accounting");
 }
 
-function guardErr(e: unknown): string {
-  if (e instanceof PermissionError) return e.message;
-  const msg = e instanceof Error ? e.message : String(e);
-  if (msg.includes("23505")) return "Nomor invoice sudah ada";
-  return msg;
-}
 
 export async function listInvoices(): Promise<ActionResult<InvoiceRow[]>> {
   try {

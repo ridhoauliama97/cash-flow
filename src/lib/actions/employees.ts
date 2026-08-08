@@ -1,8 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requirePermission, PermissionError } from "@/lib/rbac";
+import { requirePermission } from "@/lib/rbac";
 import { createClient } from "@/lib/supabase/server";
+import { guardErr } from "@/lib/utils/guard-err";
 
 export type ActionResult<T = undefined> =
   | { ok: true; data?: T }
@@ -40,13 +41,6 @@ async function db() {
   return supabase.schema("accounting");
 }
 
-function guardErr(e: unknown): string {
-  if (e instanceof PermissionError) return e.message;
-  const msg = e instanceof Error ? e.message : String(e);
-  if (msg.includes("23505")) return "Data sudah ada";
-  if (msg.includes("23503")) return "Referensi tidak valid";
-  return msg;
-}
 
 function toRow(r: DbRow): EmployeeRow {
   return {

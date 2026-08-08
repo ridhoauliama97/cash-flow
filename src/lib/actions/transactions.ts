@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import {
-  PermissionError,
   requireCanModifyData,
   requirePermission,
 } from "@/lib/rbac";
@@ -17,6 +16,7 @@ import type {
   TransactionStatus,
   TransactionTypeFase1,
 } from "@/types/ledger";
+import { guardErr } from "@/lib/utils/guard-err";
 
 export type ActionResult<T = undefined> =
   | { ok: true; data?: T }
@@ -79,12 +79,6 @@ async function db() {
   return supabase.schema("accounting");
 }
 
-function guardErr(e: unknown): string {
-  if (e instanceof PermissionError) return e.message;
-  const msg = e instanceof Error ? e.message : String(e);
-  if (msg.includes("23505")) return "Data sudah ada";
-  return msg;
-}
 
 /**
  * List transaksi kas (date desc) + nama cost center & pembuat untuk display.

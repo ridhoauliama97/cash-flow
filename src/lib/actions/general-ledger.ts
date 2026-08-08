@@ -1,6 +1,6 @@
 "use server";
 
-import { requirePermission, PermissionError } from "@/lib/rbac";
+import { requirePermission } from "@/lib/rbac";
 import { createClient } from "@/lib/supabase/server";
 import {
   computeGlRows,
@@ -8,6 +8,7 @@ import {
   type GlRow,
   type GlTotals,
 } from "@/lib/general-ledger";
+import { guardErr } from "@/lib/utils/guard-err";
 
 export type ActionResult<T = undefined> =
   | { ok: true; data?: T }
@@ -50,10 +51,6 @@ async function db() {
   return supabase.schema("accounting");
 }
 
-function guardErr(e: unknown): string {
-  if (e instanceof PermissionError) return e.message;
-  return e instanceof Error ? e.message : String(e);
-}
 
 const toNumber = (v: string | number): number =>
   typeof v === "number" ? v : Number(v);
