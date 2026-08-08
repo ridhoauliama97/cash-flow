@@ -44,3 +44,10 @@ next-env.d.ts
 
 # Agent skill artifacts (Prisma 7 init)
 .windsurf/
+
+# allow committing the example
+.!.env.example
+
+# Supabase CLI artifacts
+supabase/.temp
+supabase/.branches

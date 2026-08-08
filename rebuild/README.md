@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Cash Flow — Rebuild (Next.js)
 
-## Getting Started
+Fase 1 MVP rebuild sistem akuntansi (lihat `PRD.md` di root repo). Package **standalone** di subfolder ini — app Vite lama di root repo tidak diubah.
 
-First, run the development server:
+Stack: Next.js (App Router) + TypeScript strict + Tailwind v4 + shadcn/ui v4 (Base UI) + Prisma 7 + Supabase.
+
+## Commands (pnpm only — `bun` gagal menulis lockfile di sebagian filesystem)
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm dev          # dev server :3000
+pnpm typecheck    # tsc --noEmit (noUnusedLocals/Parameters on)
+pnpm lint         # eslint
+pnpm test         # vitest (node env, src/**/*.test.ts)
+pnpm build        # next build (CI order: typecheck -> lint -> test -> build)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Setup Supabase
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Copy `.env.example` ke `.env`, isi `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` (Project Settings → API). Tanpa keduanya, app berjalan di **mode local** (demo, localStorage).
+2. Client terpisah: `src/lib/supabase/client.ts` (browser) dan `src/lib/supabase/server.ts` (server, cookie-based) — jangan dipakai silang.
+3. Supabase CLI ada di `~/.supabase/bin/supabase` (tidak ada di PATH):
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+export SUPABASE_ACCESS_TOKEN="<sbp_ token>"   # token tersimpan di ~/.supabase/access-token
+~/.supabase/bin/supabase link --project-ref uyygrpyylyzqlqjguikx
+```
 
-## Learn More
+> Project sudah ter-link (ref `uyygrpyylyzqlqjguikx`, project yang sama dengan app Vite lama). Saat `db push`, jangan beri flag `--project-ref` — akan error.
 
-To learn more about Next.js, take a look at the following resources:
+## Struktur (berjalan)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+├── app/             # App Router (layout, halaman)
+├── components/ui/   # shadcn/ui primitives (Base UI, bukan Radix)
+├── lib/
+│   ├── supabase/    # client.ts (browser) + server.ts (server cookies)
+│   └── store/       # mode resolver (local vs supabase) + localStorage adapter
+└── generated/prisma # output prisma generate (gitignored)
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Prisma 7
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Generator tipe baru `prisma-client` → output `src/generated/prisma` (gitignored).
+- Build scripts Prisma di-approve via `allowBuilds` di `pnpm-workspace.yaml` — jangan dihapus.
+- `pnpm-workspace.yaml` root repo TIDAK boleh dimodifikasi (bukan workspace).
