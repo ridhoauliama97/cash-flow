@@ -3,13 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import {
-  ChevronsUpDown,
-  ArrowUp,
-  ArrowDown,
-  Search,
-  Plus,
-} from "lucide-react";
+import { ChevronsUpDown, ArrowUp, ArrowDown, Search, Plus } from "lucide-react";
 import {
   type ColumnFiltersState,
   type SortingState,
@@ -81,7 +75,10 @@ const FREQUENCY_LABELS: Record<string, string> = {
   quarterly: "Triwulanan",
 };
 
-const FREQUENCY_VARIANT: Record<string, "secondary" | "default" | "success" | "warning"> = {
+const FREQUENCY_VARIANT: Record<
+  string,
+  "secondary" | "default" | "success" | "warning"
+> = {
   daily: "secondary",
   weekly: "default",
   monthly: "success",
@@ -193,7 +190,8 @@ export function ScheduleManager({
         ),
         cell: ({ row }) => (
           <Badge variant="secondary">
-            {REPORT_TYPE_LABELS[row.original.reportType] ?? row.original.reportType}
+            {REPORT_TYPE_LABELS[row.original.reportType] ??
+              row.original.reportType}
           </Badge>
         ),
       },
@@ -449,7 +447,8 @@ export function ScheduleManager({
           </SelectContent>
         </Select>
         <span className="ml-auto text-xs text-muted-foreground">
-          {table.getFilteredRowModel().rows.length} dari {schedules.length} jadwal
+          {table.getFilteredRowModel().rows.length} dari {schedules.length}{" "}
+          jadwal
         </span>
       </div>
 

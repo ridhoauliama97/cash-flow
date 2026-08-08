@@ -147,7 +147,9 @@ export function Sidebar({
           </div>
           <div>
             <p className="text-sm font-semibold leading-tight">Cash Flow</p>
-            <p className="text-xs text-muted-foreground">Finance &amp; Accounting</p>
+            <p className="text-xs text-muted-foreground">
+              Finance &amp; Accounting
+            </p>
           </div>
         </div>
 
@@ -177,8 +179,9 @@ export function Sidebar({
                   {label}
                 </Link>
                 {to === "/master/chart-of-accounts" &&
-                  MASTER_SUB.filter(() => hasPermission(allowed, ["master-data", "read"])).map(
-                    (sub) => (
+                  MASTER_SUB.filter(() =>
+                    hasPermission(allowed, ["master-data", "read"]),
+                  ).map((sub) => (
                     <Link
                       key={sub.to}
                       href={sub.to}

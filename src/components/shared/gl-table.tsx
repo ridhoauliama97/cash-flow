@@ -132,7 +132,9 @@ export function GlReportClient({
     if (from) params.set("from", from);
     if (to) params.set("to", to);
     const qs = params.toString();
-    router.push(qs ? `/reports/general-ledger?${qs}` : "/reports/general-ledger");
+    router.push(
+      qs ? `/reports/general-ledger?${qs}` : "/reports/general-ledger",
+    );
   }
 
   function handlePeriodChange(value: string) {

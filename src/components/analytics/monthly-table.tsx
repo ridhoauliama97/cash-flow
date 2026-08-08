@@ -9,7 +9,11 @@ import {
 import { formatIDR } from "@/lib/format";
 import type { MonthlySummary } from "@/lib/actions/analytics";
 
-export type AnalyticsMode = "revenue" | "expenses" | "profitability" | "cash-flow";
+export type AnalyticsMode =
+  | "revenue"
+  | "expenses"
+  | "profitability"
+  | "cash-flow";
 
 const MODE_META: Record<
   AnalyticsMode,
@@ -141,10 +145,7 @@ export function MonthlyTable({
                     {row.label}
                   </TableCell>
                   {meta.columns.map((c) => (
-                    <TableCell
-                      key={c.key}
-                      className="text-right tabular-nums"
-                    >
+                    <TableCell key={c.key} className="text-right tabular-nums">
                       {formatIDR(row[c.key])}
                     </TableCell>
                   ))}
