@@ -36,7 +36,7 @@ function guardErr(e: unknown): string {
  */
 export async function getMonthlySummary(): Promise<ActionResult<MonthlySummary>> {
   try {
-    await requirePermission("report", "read");
+    await requirePermission("dashboard", "read");
     const { data, error } = await db().then((s) =>
       s
         .from("transactions")

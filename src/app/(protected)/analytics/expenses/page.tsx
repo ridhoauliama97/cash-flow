@@ -1,9 +1,12 @@
+import { AccessDenied } from "@/components/shared/access-denied";
 import { MonthlyTable } from "@/components/analytics/monthly-table";
 import { getMonthlySummary } from "@/lib/actions/analytics";
+import { hasPageAccess } from "@/lib/rbac";
 
 export const metadata = { title: "Expenses — Cash Flow" };
 
 export default async function ExpensesPage() {
+  if (!(await hasPageAccess("analytics"))) return <AccessDenied />;
   const res = await getMonthlySummary();
   if (!res.ok) throw new Error(`Gagal memuat analitik: ${res.error}`);
   return <MonthlyTable mode="expenses" data={res.data!} />;

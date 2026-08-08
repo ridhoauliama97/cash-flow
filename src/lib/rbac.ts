@@ -196,6 +196,24 @@ export async function requirePermission(
   return user;
 }
 
+/**
+ * Guard untuk halaman server-component (menu access): true kalau user punya
+ * akses, false kalau tidak (tanpa throw — caller render <AccessDenied />).
+ * Error lain (mis. koneksi DB) tetap dilempar.
+ */
+export async function hasPageAccess(
+  module: string,
+  action = "read",
+): Promise<boolean> {
+  try {
+    await requirePermission(module, action);
+    return true;
+  } catch (e) {
+    if (e instanceof PermissionError) return false;
+    throw e;
+  }
+}
+
 /** User id pemilik role level 'superadmin' (dari DB, tidak hardcoded). */
 export async function getSuperAdminUserIds(): Promise<Set<string>> {
   const { data, error } = await accounting().then((s) =>

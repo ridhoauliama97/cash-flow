@@ -1,9 +1,12 @@
 import { PiggyBank } from "lucide-react";
 import { ComingSoon } from "@/components/analytics/coming-soon";
+import { AccessDenied } from "@/components/shared/access-denied";
+import { hasPageAccess } from "@/lib/rbac";
 
 export const metadata = { title: "Receivable & Payable — Cash Flow" };
 
-export default function ReceivablesPage() {
+export default async function ReceivablesPage() {
+  if (!(await hasPageAccess("analytics"))) return <AccessDenied />;
   return (
     <ComingSoon
       title="Receivable & Payable"

@@ -9,21 +9,29 @@ validasi dilakukan di aplikasi (RBAC dinamis, bukan hard-coded di kode).
 
 | Modul         | Deskripsi                                         | Aksi |
 | ------------- | ------------------------------------------------- | ---- |
+| `dashboard`   | Halaman Overview                                  | read |
+| `analytics`   | Halaman analitik (Revenue, Expenses, Profitability, Cash Flow, Receivable & Payable, Forecast) | read |
 | `transaction` | Transaksi kas masuk/keluar                        | create, read, update, delete, approve, print |
 | `ledger`      | Jurnal & buku besar                               | create, read, update, delete, print |
 | `master-data` | Customer, supplier, cost center, chart of accounts | create, read, update, delete, print |
 | `report`      | Laporan keuangan                                  | read, print, export |
+| `import`      | Import Data (CSV/Excel)                           | read |
+| `schedule`    | Schedules (jadwal laporan berkala)                | read |
 | `period`      | Tutup buku & reopen periode                       | approve |
 | `user`        | Kelola user, role, permission                     | create, read, update, delete |
 
 > Approval level tidak disimpan sebagai permission terpisah — diturunkan dari
 > `role.level`: `kepala` = approval level 1, `direktur` = approval level 2.
 > Aksi `transaction.approve` berarti role punya wewenang approve pada level tsb.
+> Menu sidebar otomatis tersembunyi bila role tidak punya `read` untuk modul
+> menu tersebut (guard `hasPageAccess` di halaman + filter di `Sidebar`).
 
 ## Matriks
 
 | Modul / aksi            | Super Admin | Admin | Direktur | Asisten Dir | Kepala Finance | Staff Finance |
 | ----------------------- | :-: | :-: | :-: | :-: | :-: | :-: |
+| **dashboard** read      | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
+| **analytics** read      | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
 | **transaction** create  | ✓   | ✓   |     |     | ✓   | ✓   |
 | **transaction** read    | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
 | **transaction** update  | ✓   | ✓   |     |     | ✓   | ✓   |
@@ -43,6 +51,8 @@ validasi dilakukan di aplikasi (RBAC dinamis, bukan hard-coded di kode).
 | **report** read         | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
 | **report** print        | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
 | **report** export       | ✓   | ✓   | ✓   | ✓   | ✓   | ✓   |
+| **import** read         | ✓   | ✓   |     |     | ✓   |     |
+| **schedule** read       | ✓   | ✓   |     |     | ✓   | ✓   |
 | **period** approve      | ✓   | ✓   | ✓   |     |     |     |
 | **user** create         | ✓   | ✓   |     |     |     |     |
 | **user** read           | ✓   | ✓   |     |     |     |     |

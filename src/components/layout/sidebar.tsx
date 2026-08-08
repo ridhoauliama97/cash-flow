@@ -24,31 +24,84 @@ import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 const NAV_ITEMS = [
-  { to: "/", label: "Overview", icon: LayoutDashboard },
-  { to: "/analytics/revenue", label: "Revenue", icon: BarChart3 },
-  { to: "/analytics/expenses", label: "Expenses", icon: Wallet },
+  {
+    to: "/",
+    label: "Overview",
+    icon: LayoutDashboard,
+    permission: ["dashboard", "read"] as const,
+  },
+  {
+    to: "/analytics/revenue",
+    label: "Revenue",
+    icon: BarChart3,
+    permission: ["analytics", "read"] as const,
+  },
+  {
+    to: "/analytics/expenses",
+    label: "Expenses",
+    icon: Wallet,
+    permission: ["analytics", "read"] as const,
+  },
   {
     to: "/analytics/profitability",
     label: "Profitability",
     icon: TrendingUp,
+    permission: ["analytics", "read"] as const,
   },
-  { to: "/analytics/cash-flow", label: "Cash Flow", icon: LineChart },
+  {
+    to: "/analytics/cash-flow",
+    label: "Cash Flow",
+    icon: LineChart,
+    permission: ["analytics", "read"] as const,
+  },
   {
     to: "/analytics/receivables",
     label: "Receivable & Payable",
     icon: PiggyBank,
+    permission: ["analytics", "read"] as const,
   },
-  { to: "/transactions", label: "Transactions", icon: ArrowDownUp },
+  {
+    to: "/transactions",
+    label: "Transactions",
+    icon: ArrowDownUp,
+    permission: ["transaction", "read"] as const,
+  },
   {
     to: "/master/chart-of-accounts",
     label: "Master Data",
     icon: FolderTree,
+    permission: ["master-data", "read"] as const,
   },
-  { to: "/analytics/forecast", label: "Forecast", icon: CalendarClock },
-  { to: "/reports/general-ledger", label: "Reports & Export", icon: FileText },
-  { to: "/analytics/import", label: "Import Data", icon: Upload },
-  { to: "/analytics/schedules", label: "Schedules", icon: FileDown },
-  { to: "/settings/users", label: "Settings", icon: Settings },
+  {
+    to: "/analytics/forecast",
+    label: "Forecast",
+    icon: CalendarClock,
+    permission: ["analytics", "read"] as const,
+  },
+  {
+    to: "/reports/general-ledger",
+    label: "Reports & Export",
+    icon: FileText,
+    permission: ["report", "read"] as const,
+  },
+  {
+    to: "/analytics/import",
+    label: "Import Data",
+    icon: Upload,
+    permission: ["import", "read"] as const,
+  },
+  {
+    to: "/analytics/schedules",
+    label: "Schedules",
+    icon: FileDown,
+    permission: ["schedule", "read"] as const,
+  },
+  {
+    to: "/settings/users",
+    label: "Settings",
+    icon: Settings,
+    permission: ["user", "read"] as const,
+  },
 ];
 
 const MASTER_SUB = [
@@ -57,7 +110,21 @@ const MASTER_SUB = [
   { to: "/master/cost-centers", label: "Cost Centers", icon: Building2 },
 ];
 
-export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
+type NavPermission = readonly [module: string, action: string];
+
+function hasPermission(allowed: string[], permission: NavPermission) {
+  return allowed.includes(permission.join("/"));
+}
+
+export function Sidebar({
+  open,
+  onClose,
+  allowed,
+}: {
+  open: boolean;
+  onClose: () => void;
+  allowed: string[];
+}) {
   const pathname = usePathname();
 
   return (
@@ -85,7 +152,9 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-          {NAV_ITEMS.map(({ to, label, icon: Icon }) => {
+          {NAV_ITEMS.filter(({ permission }) =>
+            hasPermission(allowed, permission),
+          ).map(({ to, label, icon: Icon }) => {
             const active =
               to === "/" ? pathname === "/" : pathname.startsWith(to);
             const subActive =
@@ -108,7 +177,8 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
                   {label}
                 </Link>
                 {to === "/master/chart-of-accounts" &&
-                  MASTER_SUB.map((sub) => (
+                  MASTER_SUB.filter(() => hasPermission(allowed, ["master-data", "read"])).map(
+                    (sub) => (
                     <Link
                       key={sub.to}
                       href={sub.to}

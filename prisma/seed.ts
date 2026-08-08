@@ -47,6 +47,8 @@ const PERMISSION_MATRIX: Array<{ role: string; permissions: Array<[Module, Actio
   {
     role: "Direktur",
     permissions: [
+      ["dashboard", "read"],
+      ["analytics", "read"],
       ["transaction", "read"],
       ["transaction", "approve"],
       ["transaction", "print"],
@@ -63,6 +65,8 @@ const PERMISSION_MATRIX: Array<{ role: string; permissions: Array<[Module, Actio
   {
     role: "Asisten Direktur",
     permissions: [
+      ["dashboard", "read"],
+      ["analytics", "read"],
       ["transaction", "read"],
       ["transaction", "approve"],
       ["transaction", "print"],
@@ -78,6 +82,10 @@ const PERMISSION_MATRIX: Array<{ role: string; permissions: Array<[Module, Actio
   {
     role: "Kepala Finance",
     permissions: [
+      ["dashboard", "read"],
+      ["analytics", "read"],
+      ["import", "read"],
+      ["schedule", "read"],
       ["transaction", "create"],
       ["transaction", "read"],
       ["transaction", "update"],
@@ -98,6 +106,9 @@ const PERMISSION_MATRIX: Array<{ role: string; permissions: Array<[Module, Actio
   {
     role: "Staff Finance",
     permissions: [
+      ["dashboard", "read"],
+      ["analytics", "read"],
+      ["schedule", "read"],
       ["transaction", "create"],
       ["transaction", "read"],
       ["transaction", "update"],

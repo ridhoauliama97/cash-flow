@@ -22,10 +22,14 @@ export const PERMISSION_ACTIONS = [
 export type PermissionAction = (typeof PERMISSION_ACTIONS)[number];
 
 export const PERMISSION_MODULES = [
+  "dashboard",
+  "analytics",
   "transaction",
   "ledger",
   "master-data",
   "report",
+  "import",
+  "schedule",
   "period",
   "user",
 ] as const;

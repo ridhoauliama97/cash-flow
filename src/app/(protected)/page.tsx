@@ -1,9 +1,12 @@
+import { AccessDenied } from "@/components/shared/access-denied";
 import { MonthlyTable } from "@/components/analytics/monthly-table";
 import { getMonthlySummary } from "@/lib/actions/analytics";
+import { hasPageAccess } from "@/lib/rbac";
 
 export const metadata = { title: "Overview — Cash Flow" };
 
 export default async function DashboardPage() {
+  if (!(await hasPageAccess("dashboard"))) return <AccessDenied />;
   const res = await getMonthlySummary();
   if (!res.ok) return <DefaultDashboard />;
   return <MonthlyTable mode="profitability" data={res.data!} />;

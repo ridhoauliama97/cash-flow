@@ -38,7 +38,7 @@ export async function listUsers(): Promise<ActionResult<UserRow[]>> {
       s
         .from("users")
         .select(
-          "id, email, name, is_active, division_id, divisions!inner(name), user_roles(roles(id, name, level))",
+          "id, email, name, is_active, division_id, divisions(name), user_roles(roles(id, name, level))",
         )
         .order("email"),
     );
