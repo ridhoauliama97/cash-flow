@@ -33,7 +33,7 @@ export function TransactionManager({
 }) {
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [openMode, setOpenMode] = useState<"create">("create");
+  const [editing, setEditing] = useState<TransactionRow | null>(null);
   const [typeFilter, setTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
@@ -44,7 +44,12 @@ export function TransactionManager({
   );
 
   function openCreate() {
-    setOpenMode("create");
+    setEditing(null);
+    setDialogOpen(true);
+  }
+
+  function openEdit(row: TransactionRow) {
+    setEditing(row);
     setDialogOpen(true);
   }
 
@@ -121,13 +126,14 @@ export function TransactionManager({
         </div>
       </div>
 
-      <TransactionsTable rows={filteredRows} onDelete={handleDelete} />
+      <TransactionsTable rows={filteredRows} onDelete={handleDelete} onEdit={openEdit} />
 
       <TransactionFormDialog
-        key={openMode}
+        key={editing ? `edit-${editing.id}` : "create"}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         costCenters={costCenters}
+        transaction={editing}
       />
     </div>
   );

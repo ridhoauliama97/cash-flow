@@ -180,3 +180,65 @@ export async function createTransaction(
     return { ok: false, error: guardErr(e) };
   }
 }
+
+export interface TransactionUpdate extends TransactionDraft {
+  id: string;
+}
+
+export async function updateTransaction(
+  update: TransactionUpdate,
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    await requirePermission("transaction", "update");
+
+    const periodsRes = await db().then((s) =>
+      s
+        .from("accounting_periods")
+        .select("id, start_date, end_date")
+        .eq("status", "open")
+        .order("start_date", { ascending: true }),
+    );
+    if (periodsRes.error) return { ok: false, error: guardErr(periodsRes.error) };
+    const periodRows = (periodsRes.data ?? []) as Array<{
+      id: string;
+      start_date: string;
+      end_date: string;
+    }>;
+    const openPeriods: OpenPeriod[] = periodRows.map((p) => ({
+      startDate: p.start_date,
+      endDate: p.end_date,
+    }));
+
+    const costCentersRes = await db().then((s) => s.from("cost_centers").select("id"));
+    if (costCentersRes.error) return { ok: false, error: guardErr(costCentersRes.error) };
+    const costCenterIds = new Set(
+      ((costCentersRes.data ?? []) as Array<{ id: string }>).map((c) => c.id),
+    );
+
+    const invalid = validateTransactionDraft(update, { openPeriods, costCenterIds });
+    if (invalid) return { ok: false, error: invalid };
+
+    const { error: ownerErr } = await db().then((s) =>
+      s.from("transactions").select("created_by").eq("id", update.id).single(),
+    );
+    if (ownerErr) return { ok: false, error: guardErr(ownerErr) };
+
+    const { error } = await db().then((s) =>
+      s
+        .from("transactions")
+        .update({
+          type: update.type,
+          date: update.date,
+          description: update.description.trim(),
+          amount: update.amount,
+          currency: update.currency,
+          cost_center_id: update.costCenterId ?? null,
+        } as never)
+        .eq("id", update.id),
+    );
+    if (error) return { ok: false, error: guardErr(error) };
+    return { ok: true, data: { id: update.id } };
+  } catch (e) {
+    return { ok: false, error: guardErr(e) };
+  }
+}

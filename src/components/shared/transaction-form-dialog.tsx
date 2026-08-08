@@ -23,7 +23,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createTransactionAction } from "@/lib/actions/transactions";
+import {
+  createTransactionAction,
+  updateTransactionAction,
+  type TransactionRow,
+} from "@/lib/actions/transactions";
 import type { CostCenterRow } from "@/lib/cost-centers";
 import {
   convert,
@@ -37,27 +41,26 @@ import type { TransactionDraft } from "@/lib/services/transactions";
 export interface TransactionFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Semua cost center (untuk pilihan di form; kosong = tanpa cost center). */
   costCenters: CostCenterRow[];
+  transaction?: TransactionRow | null;
 }
 
-// Kurs untuk preview estimasi IDR: static fallback (client-safe, tanpa fetch).
 const IDR_RATES = ratesForHome(FALLBACK_RATES_PER_USD, "IDR");
 
 export function TransactionFormDialog({
   open,
   onOpenChange,
   costCenters,
+  transaction,
 }: TransactionFormDialogProps) {
   const router = useRouter();
-  // State diinisialisasi dari default; dialog di-remount via `key` dari
-  // parent (pola CoaFormDialog) — hindari setState sinkron dalam effect.
-  const [type, setType] = useState("income");
-  const [date, setDate] = useState(todayISO());
-  const [description, setDescription] = useState("");
-  const [amount, setAmount] = useState("");
-  const [currency, setCurrency] = useState("IDR");
-  const [costCenterId, setCostCenterId] = useState("");
+  const editing = transaction ?? null;
+  const [type, setType] = useState(editing?.type ?? "income");
+  const [date, setDate] = useState(editing?.date ?? todayISO());
+  const [description, setDescription] = useState(editing?.description ?? "");
+  const [amount, setAmount] = useState(editing ? String(editing.amount) : "");
+  const [currency, setCurrency] = useState(editing?.currency ?? "IDR");
+  const [costCenterId, setCostCenterId] = useState(editing?.costCenterId ?? "");
   const [busy, setBusy] = useState(false);
 
   const parsedAmount = Number(amount);
@@ -77,13 +80,15 @@ export function TransactionFormDialog({
       currency,
       costCenterId: costCenterId === "" ? null : costCenterId,
     };
-    const res = await createTransactionAction(draft);
+    const res = editing
+      ? await updateTransactionAction({ ...draft, id: editing.id })
+      : await createTransactionAction(draft);
     setBusy(false);
     if (!res.ok) {
       toast.error(res.error);
       return;
     }
-    toast.success("Transaksi dibuat");
+    toast.success(editing ? "Transaksi diperbarui" : "Transaksi dibuat");
     onOpenChange(false);
     router.refresh();
   }
@@ -92,9 +97,13 @@ export function TransactionFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Tambah Transaksi</DialogTitle>
+          <DialogTitle>
+            {editing ? "Edit Transaksi" : "Tambah Transaksi"}
+          </DialogTitle>
           <DialogDescription>
-            Transaksi kas manual — tersimpan sebagai draft sampai diposting.
+            {editing
+              ? "Perbarui detail transaksi kas manual."
+              : "Transaksi kas manual — tersimpan sebagai draft sampai diposting."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="grid gap-4">
@@ -207,7 +216,7 @@ export function TransactionFormDialog({
               Batal
             </Button>
             <Button type="submit" disabled={busy}>
-              {busy ? "Menyimpan…" : "Buat"}
+              {busy ? "Menyimpan…" : editing ? "Simpan" : "Buat"}
             </Button>
           </DialogFooter>
         </form>

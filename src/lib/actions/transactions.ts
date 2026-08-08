@@ -7,8 +7,7 @@ import {
   requirePermission,
 } from "@/lib/rbac";
 import { createClient } from "@/lib/supabase/server";
-import { createTransaction } from "@/lib/services/transactions";
-import type { TransactionDraft } from "@/lib/services/transactions";
+import { createTransaction, updateTransaction, type TransactionDraft } from "@/lib/services/transactions";
 import type {
   Currency,
   TransactionStatus,
@@ -115,6 +114,12 @@ export async function createTransactionAction(
   draft: TransactionDraft,
 ): Promise<ActionResult<{ id: string }>> {
   return createTransaction(draft);
+}
+
+export async function updateTransactionAction(
+  update: TransactionDraft & { id: string },
+): Promise<ActionResult<{ id: string }>> {
+  return updateTransaction(update);
 }
 
 /** Hapus transaksi: hanya status 'draft', plus super admin guard (service layer). */

@@ -89,7 +89,7 @@ function guardErr(e: unknown): string {
 
 export async function listInvoices(): Promise<ActionResult<InvoiceRow[]>> {
   try {
-    await requirePermission("transaction", "read");
+    await requirePermission("analytics", "read");
     const { data, error } = await db().then((s) =>
       s
         .from("invoices")
@@ -130,7 +130,7 @@ export async function createInvoice(input: {
   dueDate: string;
 }): Promise<ActionResult<{ id: string }>> {
   try {
-    const user = await requirePermission("transaction", "create");
+    const user = await requirePermission("analytics", "create");
     if (!["receivable", "payable"].includes(input.type)) {
       return { ok: false, error: "Type harus receivable atau payable" };
     }
@@ -185,7 +185,7 @@ export async function updateInvoice(
   },
 ): Promise<ActionResult> {
   try {
-    await requirePermission("transaction", "update");
+    await requirePermission("analytics", "update");
     if (!input.description.trim()) {
       return { ok: false, error: "Deskripsi wajib diisi" };
     }
@@ -215,7 +215,7 @@ export async function updateInvoice(
 
 export async function deleteInvoice(id: string): Promise<ActionResult> {
   try {
-    await requirePermission("transaction", "delete");
+    await requirePermission("analytics", "delete");
     const { data, error: fetchErr } = await db().then((s) =>
       s.from("invoices").select("id, created_by").eq("id", id),
     );
@@ -239,7 +239,7 @@ export async function setInvoiceStatus(
   status: string,
 ): Promise<ActionResult> {
   try {
-    await requirePermission("transaction", "update");
+    await requirePermission("analytics", "update");
     if (!INVOICE_STATUSES.includes(status as (typeof INVOICE_STATUSES)[number])) {
       return { ok: false, error: "Status tidak valid" };
     }

@@ -42,9 +42,10 @@ const STATUS_BADGE_VARIANTS: Record<
 export interface TransactionsTableProps {
   rows: TransactionRow[];
   onDelete: (row: TransactionRow) => void;
+  onEdit: (row: TransactionRow) => void;
 }
 
-export function TransactionsTable({ rows, onDelete }: TransactionsTableProps) {
+export function TransactionsTable({ rows, onDelete, onEdit }: TransactionsTableProps) {
   return (
     <div className="rounded-xl border bg-card">
       <Table>
@@ -114,16 +115,25 @@ export function TransactionsTable({ rows, onDelete }: TransactionsTableProps) {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <div className="flex justify-end">
+                  <div className="flex justify-end gap-1">
                     {row.status === "draft" ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive"
-                        onClick={() => onDelete(row)}
-                      >
-                        Hapus
-                      </Button>
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onEdit(row)}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive"
+                          onClick={() => onDelete(row)}
+                        >
+                          Hapus
+                        </Button>
+                      </>
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}
