@@ -17,14 +17,17 @@ export const PERMISSION_ACTIONS = [
   "delete",
   "approve",
   "print",
+  "export",
 ] as const;
 export type PermissionAction = (typeof PERMISSION_ACTIONS)[number];
 
 export const PERMISSION_MODULES = [
   "transaction",
   "ledger",
-  "report",
   "master-data",
+  "report",
+  "period",
+  "user",
 ] as const;
 export type PermissionModule = (typeof PERMISSION_MODULES)[number];
 
