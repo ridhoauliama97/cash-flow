@@ -60,7 +60,9 @@ export function CustomerFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{customer ? "Edit Customer" : "Tambah Customer"}</DialogTitle>
+          <DialogTitle>
+            {customer ? "Edit Customer" : "Tambah Customer"}
+          </DialogTitle>
           <DialogDescription>
             Nama customer wajib diisi; kontak opsional.
           </DialogDescription>
@@ -86,7 +88,11 @@ export function CustomerFormDialog({
             />
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               Batal
             </Button>
             <Button type="submit" disabled={busy}>

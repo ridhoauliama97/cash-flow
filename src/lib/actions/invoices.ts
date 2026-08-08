@@ -1,10 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import {
-  requireCanModifyData,
-  requirePermission,
-} from "@/lib/rbac";
+import { requireCanModifyData, requirePermission } from "@/lib/rbac";
 import { createClient } from "@/lib/supabase/server";
 import { guardErr } from "@/lib/utils/guard-err";
 
@@ -86,7 +83,6 @@ async function db() {
   return supabase.schema("accounting");
 }
 
-
 export async function listInvoices(): Promise<ActionResult<InvoiceRow[]>> {
   try {
     await requirePermission("analytics", "read");
@@ -151,7 +147,7 @@ export async function createInvoice(input: {
       s
         .from("invoices")
         .insert({
-        id: crypto.randomUUID(),
+          id: crypto.randomUUID(),
           type: input.type,
           number,
           customer_id: input.type === "receivable" ? input.customerId : null,

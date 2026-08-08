@@ -322,7 +322,7 @@ export function ForecastManager({ forecasts }: { forecasts: ForecastRow[] }) {
           onValueChange={(v) => {
             setColumnFilters((prev) => [
               ...prev.filter((f) => f.id !== "category"),
-              ...(v && v !== "semua" ? [{ id: "category", value: v }] : []),
+              ...(v && v !== "" ? [{ id: "category", value: v }] : []),
             ]);
           }}
         >
@@ -331,10 +331,10 @@ export function ForecastManager({ forecasts }: { forecasts: ForecastRow[] }) {
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="semua">Semua kategori</SelectItem>
-              <SelectItem value="revenue">Pendapatan</SelectItem>
-              <SelectItem value="expense">Beban</SelectItem>
-              <SelectItem value="profit">Laba</SelectItem>
+              <SelectItem value="">Semua kategori</SelectItem>
+              <SelectItem value="Revenue">Pendapatan</SelectItem>
+              <SelectItem value="Expense">Beban</SelectItem>
+              <SelectItem value="Profit">Laba</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>

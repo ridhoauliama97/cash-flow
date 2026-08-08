@@ -68,7 +68,10 @@ export function CustomerManager({ rows }: { rows: CustomerRow[] }) {
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3} className="py-10 text-center text-muted-foreground">
+                <TableCell
+                  colSpan={3}
+                  className="py-10 text-center text-muted-foreground"
+                >
                   Belum ada customer — buat customer pertama.
                 </TableCell>
               </TableRow>
@@ -81,7 +84,11 @@ export function CustomerManager({ rows }: { rows: CustomerRow[] }) {
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(row)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEdit(row)}
+                      >
                         Edit
                       </Button>
                       <Button

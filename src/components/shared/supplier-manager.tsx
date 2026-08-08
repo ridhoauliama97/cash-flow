@@ -68,7 +68,10 @@ export function SupplierManager({ rows }: { rows: SupplierRow[] }) {
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3} className="py-10 text-center text-muted-foreground">
+                <TableCell
+                  colSpan={3}
+                  className="py-10 text-center text-muted-foreground"
+                >
                   Belum ada supplier — buat supplier pertama.
                 </TableCell>
               </TableRow>
@@ -81,7 +84,11 @@ export function SupplierManager({ rows }: { rows: SupplierRow[] }) {
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(row)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEdit(row)}
+                      >
                         Edit
                       </Button>
                       <Button

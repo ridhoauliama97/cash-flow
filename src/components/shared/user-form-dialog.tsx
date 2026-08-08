@@ -25,14 +25,23 @@ export interface UserFormDialogProps {
   roles: RoleRow[];
 }
 
-export function UserFormDialog({ open, onOpenChange, user, roles }: UserFormDialogProps) {
+export function UserFormDialog({
+  open,
+  onOpenChange,
+  user,
+  roles,
+}: UserFormDialogProps) {
   const router = useRouter();
-  const [roleIds, setRoleIds] = useState<string[]>(user?.roles.map((r) => r.id) ?? []);
+  const [roleIds, setRoleIds] = useState<string[]>(
+    user?.roles.map((r) => r.id) ?? [],
+  );
   const [busy, setBusy] = useState(false);
 
   function toggleRole(roleId: string) {
     setRoleIds((prev) =>
-      prev.includes(roleId) ? prev.filter((id) => id !== roleId) : [...prev, roleId],
+      prev.includes(roleId)
+        ? prev.filter((id) => id !== roleId)
+        : [...prev, roleId],
     );
   }
 
@@ -85,7 +94,11 @@ export function UserFormDialog({ open, onOpenChange, user, roles }: UserFormDial
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               Batal
             </Button>
             <Button type="submit" disabled={busy || !user}>

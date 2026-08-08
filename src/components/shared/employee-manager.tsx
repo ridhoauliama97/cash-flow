@@ -211,9 +211,9 @@ export function EmployeeManager({
         id: "isActive",
         accessorKey: "isActive",
         filterFn: (row, columnId, filterValue: string) => {
-          if (filterValue === "aktif")
+          if (filterValue === "Aktif")
             return row.getValue<boolean>(columnId) === true;
-          if (filterValue === "nonaktif")
+          if (filterValue === "Nonaktif")
             return row.getValue<boolean>(columnId) === false;
           return true;
         },
@@ -340,7 +340,7 @@ export function EmployeeManager({
           onValueChange={(v) => {
             setColumnFilters((prev) => [
               ...prev.filter((f) => f.id !== "isActive"),
-              ...(v && v !== "semua" ? [{ id: "isActive", value: v }] : []),
+              ...(v && v !== "" ? [{ id: "isActive", value: v }] : []),
             ]);
           }}
         >
@@ -349,9 +349,9 @@ export function EmployeeManager({
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="semua">Semua status</SelectItem>
-              <SelectItem value="aktif">Aktif</SelectItem>
-              <SelectItem value="nonaktif">Nonaktif</SelectItem>
+              <SelectItem value="">Semua status</SelectItem>
+              <SelectItem value="Aktif">Aktif</SelectItem>
+              <SelectItem value="Nonaktif">Nonaktif</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
@@ -360,7 +360,7 @@ export function EmployeeManager({
           onValueChange={(v) => {
             setColumnFilters((prev) => [
               ...prev.filter((f) => f.id !== "divisionName"),
-              ...(v && v !== "semua" ? [{ id: "divisionName", value: v }] : []),
+              ...(v && v !== "" ? [{ id: "divisionName", value: v }] : []),
             ]);
           }}
         >
@@ -369,7 +369,7 @@ export function EmployeeManager({
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="semua">Semua divisi</SelectItem>
+              <SelectItem value="">Semua divisi</SelectItem>
               {divisionNames.map((d) => (
                 <SelectItem key={d} value={d}>
                   {d}
@@ -383,9 +383,7 @@ export function EmployeeManager({
           onValueChange={(v) => {
             setColumnFilters((prev) => [
               ...prev.filter((f) => f.id !== "departmentName"),
-              ...(v && v !== "semua"
-                ? [{ id: "departmentName", value: v }]
-                : []),
+              ...(v && v !== "" ? [{ id: "departmentName", value: v }] : []),
             ]);
           }}
         >
@@ -394,7 +392,7 @@ export function EmployeeManager({
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="semua">Semua departemen</SelectItem>
+              <SelectItem value="">Semua departemen</SelectItem>
               {departmentNames.map((d) => (
                 <SelectItem key={d} value={d}>
                   {d}

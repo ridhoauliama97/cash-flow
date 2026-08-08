@@ -69,20 +69,20 @@ function SortableHeader({
 }
 
 const FREQUENCY_LABELS: Record<string, string> = {
-  daily: "Harian",
-  weekly: "Mingguan",
-  monthly: "Bulanan",
-  quarterly: "Triwulanan",
+  Daily: "Harian",
+  Weekly: "Mingguan",
+  Monthly: "Bulanan",
+  Quarterly: "Triwulanan",
 };
 
 const FREQUENCY_VARIANT: Record<
   string,
   "secondary" | "default" | "success" | "warning"
 > = {
-  daily: "secondary",
-  weekly: "default",
-  monthly: "success",
-  quarterly: "warning",
+  Daily: "secondary",
+  Weekly: "default",
+  Monthly: "success",
+  Quarterly: "warning",
 };
 
 const REPORT_TYPE_LABELS: Record<string, string> = {
@@ -106,17 +106,17 @@ const DAYS_OF_WEEK_LABELS = [
 function formatScheduleDescription(s: ScheduleRow): string {
   const time = s.timeOfDay;
   switch (s.frequency) {
-    case "daily":
+    case "Daily":
       return `Setiap hari jam ${time}`;
-    case "weekly": {
+    case "Weekly": {
       const day = s.dayOfWeek !== null ? DAYS_OF_WEEK_LABELS[s.dayOfWeek] : "—";
       return `Setiap ${day} jam ${time}`;
     }
-    case "monthly": {
+    case "Monthly": {
       const date = s.dayOfMonth ?? "—";
       return `Setiap bulan tanggal ${date} jam ${time}`;
     }
-    case "quarterly": {
+    case "Quarterly": {
       const date = s.dayOfMonth ?? "—";
       return `Setiap triwulan tanggal ${date} jam ${time}`;
     }
@@ -439,10 +439,10 @@ export function ScheduleManager({
           <SelectContent>
             <SelectGroup>
               <SelectItem value="semua">Semua frekuensi</SelectItem>
-              <SelectItem value="daily">Harian</SelectItem>
-              <SelectItem value="weekly">Mingguan</SelectItem>
-              <SelectItem value="monthly">Bulanan</SelectItem>
-              <SelectItem value="quarterly">Triwulanan</SelectItem>
+              <SelectItem value="Daily">Harian</SelectItem>
+              <SelectItem value="Weekly">Mingguan</SelectItem>
+              <SelectItem value="Monthly">Bulanan</SelectItem>
+              <SelectItem value="Quarterly">Triwulanan</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>

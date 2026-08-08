@@ -3,13 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import {
-  ChevronsUpDown,
-  ArrowUp,
-  ArrowDown,
-  Search,
-  Plus,
-} from "lucide-react";
+import { ChevronsUpDown, ArrowUp, ArrowDown, Search, Plus } from "lucide-react";
 import {
   type ColumnFiltersState,
   type SortingState,
@@ -48,7 +42,10 @@ import type { InvoiceRow } from "@/lib/actions/invoices";
 import type { CustomerRow } from "@/lib/customers";
 import type { SupplierRow } from "@/lib/suppliers";
 
-const STATUS_VARIANT: Record<string, "secondary" | "warning" | "success" | "destructive" | "outline"> = {
+const STATUS_VARIANT: Record<
+  string,
+  "secondary" | "warning" | "success" | "destructive" | "outline"
+> = {
   draft: "secondary",
   sent: "warning",
   paid: "success",
@@ -120,11 +117,15 @@ export function InvoiceManager({
             className="inline-flex"
             onClick={column.getToggleSortingHandler()}
           >
-            <SortableHeader sorted={column.getIsSorted()}>No. Invoice</SortableHeader>
+            <SortableHeader sorted={column.getIsSorted()}>
+              No. Invoice
+            </SortableHeader>
           </button>
         ),
         cell: ({ row }) => (
-          <span className="font-mono text-xs font-medium">{row.original.number}</span>
+          <span className="font-mono text-xs font-medium">
+            {row.original.number}
+          </span>
         ),
       },
       {
@@ -177,7 +178,9 @@ export function InvoiceManager({
             className="inline-flex"
             onClick={column.getToggleSortingHandler()}
           >
-            <SortableHeader sorted={column.getIsSorted()}>Jumlah</SortableHeader>
+            <SortableHeader sorted={column.getIsSorted()}>
+              Jumlah
+            </SortableHeader>
           </button>
         ),
         cell: ({ row }) => (
@@ -193,7 +196,9 @@ export function InvoiceManager({
             className="inline-flex"
             onClick={column.getToggleSortingHandler()}
           >
-            <SortableHeader sorted={column.getIsSorted()}>Jatuh Tempo</SortableHeader>
+            <SortableHeader sorted={column.getIsSorted()}>
+              Jatuh Tempo
+            </SortableHeader>
           </button>
         ),
         cell: ({ row }) => formatDate(row.original.dueDate),
@@ -211,7 +216,9 @@ export function InvoiceManager({
             className="inline-flex"
             onClick={column.getToggleSortingHandler()}
           >
-            <SortableHeader sorted={column.getIsSorted()}>Status</SortableHeader>
+            <SortableHeader sorted={column.getIsSorted()}>
+              Status
+            </SortableHeader>
           </button>
         ),
         cell: ({ row }) => (
@@ -250,7 +257,10 @@ export function InvoiceManager({
                   if (v && v !== inv.status) handleSetStatus(inv.id, v);
                 }}
               >
-                <SelectTrigger className="h-8 w-28" aria-label={`Status ${inv.number}`}>
+                <SelectTrigger
+                  className="h-8 w-28"
+                  aria-label={`Status ${inv.number}`}
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -398,7 +408,8 @@ export function InvoiceManager({
           </SelectContent>
         </Select>
         <span className="ml-auto text-xs text-muted-foreground">
-          {table.getFilteredRowModel().rows.length} dari {invoices.length} invoice
+          {table.getFilteredRowModel().rows.length} dari {invoices.length}{" "}
+          invoice
         </span>
       </div>
 

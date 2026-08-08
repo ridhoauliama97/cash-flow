@@ -2,11 +2,11 @@
 // Nilai disimpan sebagai string di DB; validasi di aplikasi.
 
 export const ACCOUNT_TYPES = [
-  "asset",
-  "liability",
-  "equity",
-  "revenue",
-  "expense",
+  "Asset",
+  "Liability",
+  "Equity",
+  "Revenue",
+  "Expense",
 ] as const;
 export type AccountType = (typeof ACCOUNT_TYPES)[number];
 

@@ -301,7 +301,7 @@ export function ProductManager({ rows }: { rows: ProductRow[] }) {
           onValueChange={(v) => {
             setColumnFilters((prev) => [
               ...prev.filter((f) => f.id !== "isActive"),
-              ...(v && v !== "semua" ? [{ id: "isActive", value: v }] : []),
+              ...(v && v !== "" ? [{ id: "isActive", value: v }] : []),
             ]);
           }}
         >
@@ -310,9 +310,9 @@ export function ProductManager({ rows }: { rows: ProductRow[] }) {
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="semua">Semua status</SelectItem>
-              <SelectItem value="aktif">Aktif</SelectItem>
-              <SelectItem value="nonaktif">Nonaktif</SelectItem>
+              <SelectItem value="">Semua status</SelectItem>
+              <SelectItem value="Aktif">Aktif</SelectItem>
+              <SelectItem value="Nonaktif">Nonaktif</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>

@@ -29,7 +29,6 @@ async function db() {
   return supabase.schema("accounting");
 }
 
-
 export async function getPermissionMatrix(): Promise<
   ActionResult<PermissionMatrix>
 > {
@@ -106,14 +105,12 @@ export async function setRolePermissions(
       .eq("role_id", roleId);
     if (delErr) return { ok: false, error: delErr.message };
     if (permissionIds.length > 0) {
-      const { error: insErr } = await s
-        .from("role_permissions")
-        .insert(
-          permissionIds.map((permissionId) => ({
-            role_id: roleId,
-            permission_id: permissionId,
-          })) as never,
-        );
+      const { error: insErr } = await s.from("role_permissions").insert(
+        permissionIds.map((permissionId) => ({
+          role_id: roleId,
+          permission_id: permissionId,
+        })) as never,
+      );
       if (insErr) return { ok: false, error: guardErr(insErr) };
     }
     revalidatePath(PATH);

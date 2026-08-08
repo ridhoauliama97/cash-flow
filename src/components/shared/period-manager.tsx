@@ -50,7 +50,8 @@ function SortableHeader({
   sorted: false | "asc" | "desc";
   children: React.ReactNode;
 }) {
-  const Icon = sorted === "asc" ? ArrowUp : sorted === "desc" ? ArrowDown : ChevronsUpDown;
+  const Icon =
+    sorted === "asc" ? ArrowUp : sorted === "desc" ? ArrowDown : ChevronsUpDown;
   return (
     <span
       className={cn(
@@ -102,7 +103,9 @@ export function PeriodManager({ periods }: { periods: PeriodRow[] }) {
             className="inline-flex"
             onClick={column.getToggleSortingHandler()}
           >
-            <SortableHeader sorted={column.getIsSorted()}>Selesai</SortableHeader>
+            <SortableHeader sorted={column.getIsSorted()}>
+              Selesai
+            </SortableHeader>
           </button>
         ),
         cell: ({ row }) =>
@@ -117,12 +120,16 @@ export function PeriodManager({ periods }: { periods: PeriodRow[] }) {
             className="inline-flex"
             onClick={column.getToggleSortingHandler()}
           >
-            <SortableHeader sorted={column.getIsSorted()}>Status</SortableHeader>
+            <SortableHeader sorted={column.getIsSorted()}>
+              Status
+            </SortableHeader>
           </button>
         ),
         cell: ({ row }) => (
-          <Badge variant={row.original.status === "open" ? "success" : "secondary"}>
-            {row.original.status === "open" ? "Terbuka" : "Tertutup"}
+          <Badge
+            variant={row.original.status === "Open" ? "success" : "secondary"}
+          >
+            {row.original.status === "Open" ? "Terbuka" : "Tertutup"}
           </Badge>
         ),
       },
@@ -134,13 +141,9 @@ export function PeriodManager({ periods }: { periods: PeriodRow[] }) {
           const busy = busyId === p.id;
           return (
             <div className="flex justify-end gap-1">
-              {p.status === "open" ? (
+              {p.status === "Open" ? (
                 <>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => openEdit(p)}
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => openEdit(p)}>
                     Edit
                   </Button>
                   <Button
@@ -204,7 +207,12 @@ export function PeriodManager({ periods }: { periods: PeriodRow[] }) {
   }
 
   async function handleDelete(period: PeriodRow) {
-    if (!confirm(`Hapus periode ${new Date(period.startDate).toLocaleDateString("id-ID")} — ${new Date(period.endDate).toLocaleDateString("id-ID")}?`)) return;
+    if (
+      !confirm(
+        `Hapus periode ${new Date(period.startDate).toLocaleDateString("id-ID")} — ${new Date(period.endDate).toLocaleDateString("id-ID")}?`,
+      )
+    )
+      return;
     const res = await deletePeriod(period.id);
     if (!res.ok) {
       toast.error(res.error);
@@ -215,7 +223,12 @@ export function PeriodManager({ periods }: { periods: PeriodRow[] }) {
   }
 
   async function handleClose(period: PeriodRow) {
-    if (!confirm(`Tutup periode ${new Date(period.startDate).toLocaleDateString("id-ID")} — ${new Date(period.endDate).toLocaleDateString("id-ID")}?`)) return;
+    if (
+      !confirm(
+        `Tutup periode ${new Date(period.startDate).toLocaleDateString("id-ID")} — ${new Date(period.endDate).toLocaleDateString("id-ID")}?`,
+      )
+    )
+      return;
     setBusyId(period.id);
     const res = await closePeriod(period.id);
     setBusyId(null);
@@ -228,7 +241,12 @@ export function PeriodManager({ periods }: { periods: PeriodRow[] }) {
   }
 
   async function handleReopen(period: PeriodRow) {
-    if (!confirm(`Buka kembali periode ${new Date(period.startDate).toLocaleDateString("id-ID")} — ${new Date(period.endDate).toLocaleDateString("id-ID")}?`)) return;
+    if (
+      !confirm(
+        `Buka kembali periode ${new Date(period.startDate).toLocaleDateString("id-ID")} — ${new Date(period.endDate).toLocaleDateString("id-ID")}?`,
+      )
+    )
+      return;
     setBusyId(period.id);
     const res = await reopenPeriod(period.id);
     setBusyId(null);
@@ -248,7 +266,8 @@ export function PeriodManager({ periods }: { periods: PeriodRow[] }) {
             Periode Akuntansi
           </h1>
           <p className="text-sm text-muted-foreground">
-            Kelola periode akuntansi — transaksi harus berada dalam periode terbuka.
+            Kelola periode akuntansi — transaksi harus berada dalam periode
+            terbuka.
           </p>
         </div>
         <Button onClick={openCreate}>Tambah Periode</Button>
@@ -266,11 +285,14 @@ export function PeriodManager({ periods }: { periods: PeriodRow[] }) {
           />
         </div>
         <Select
-          value={(columnFilters.find((f) => f.id === "status")?.value ?? "") as string}
+          value={
+            (columnFilters.find((f) => f.id === "status")?.value ??
+              "") as string
+          }
           onValueChange={(v) => {
             setColumnFilters((prev) => [
               ...prev.filter((f) => f.id !== "status"),
-              ...(v && v !== "semua" ? [{ id: "status", value: v }] : []),
+              ...(v && v !== "" ? [{ id: "status", value: v }] : []),
             ]);
           }}
         >
@@ -279,14 +301,15 @@ export function PeriodManager({ periods }: { periods: PeriodRow[] }) {
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="semua">Semua status</SelectItem>
-              <SelectItem value="open">Terbuka</SelectItem>
-              <SelectItem value="closed">Tertutup</SelectItem>
+              <SelectItem value="">Semua status</SelectItem>
+              <SelectItem value="Open">Terbuka</SelectItem>
+              <SelectItem value="Closed">Tertutup</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
         <span className="ml-auto text-xs text-muted-foreground">
-          {table.getFilteredRowModel().rows.length} dari {periods.length} periode
+          {table.getFilteredRowModel().rows.length} dari {periods.length}{" "}
+          periode
         </span>
       </div>
 
@@ -299,7 +322,10 @@ export function PeriodManager({ periods }: { periods: PeriodRow[] }) {
                   <TableHead key={header.id} className="whitespace-nowrap">
                     {header.isPlaceholder
                       ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
                   </TableHead>
                 ))}
               </TableRow>
@@ -308,7 +334,10 @@ export function PeriodManager({ periods }: { periods: PeriodRow[] }) {
           <TableBody>
             {table.getRowModel().rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length} className="py-10 text-center text-muted-foreground">
+                <TableCell
+                  colSpan={columns.length}
+                  className="py-10 text-center text-muted-foreground"
+                >
                   Belum ada periode — tambahkan periode pertama.
                 </TableCell>
               </TableRow>
@@ -317,7 +346,10 @@ export function PeriodManager({ periods }: { periods: PeriodRow[] }) {
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>

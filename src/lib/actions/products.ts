@@ -35,7 +35,6 @@ async function db() {
   return supabase.schema("accounting");
 }
 
-
 function toRow(r: DbRow): ProductRow {
   return {
     id: r.id,
@@ -60,7 +59,8 @@ interface DbRow {
 
 function validateProduct(input: ProductInput): string | null {
   if (!input.name.trim()) return "Nama produk wajib diisi";
-  if (input.name.trim().length > 200) return "Nama produk maksimal 200 karakter";
+  if (input.name.trim().length > 200)
+    return "Nama produk maksimal 200 karakter";
   if (input.price < 0) return "Harga tidak boleh negatif";
   if (!input.currency.trim()) return "Mata uang wajib diisi";
   return null;
@@ -85,14 +85,17 @@ export async function listProducts(): Promise<ActionResult<ProductRow[]>> {
   }
 }
 
-export async function createProduct(input: ProductInput): Promise<ActionResult> {
+export async function createProduct(
+  input: ProductInput,
+): Promise<ActionResult> {
   try {
     await requirePermission("master-data", "create");
     const invalid = validateProduct(input);
     if (invalid) return { ok: false, error: invalid };
 
     const { error } = await db().then((s) =>
-      s.from("products").insert({        created_at: new Date().toISOString(),
+      s.from("products").insert({
+        created_at: new Date().toISOString(),
 
         id: crypto.randomUUID(),
         name: input.name.trim(),
@@ -102,7 +105,6 @@ export async function createProduct(input: ProductInput): Promise<ActionResult> 
         currency: input.currency.trim(),
         is_active: input.isActive,
         updated_at: new Date().toISOString(),
-      
       } as never),
     );
     if (error) return { ok: false, error: guardErr(error) };

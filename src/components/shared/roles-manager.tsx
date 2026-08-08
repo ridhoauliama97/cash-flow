@@ -3,7 +3,13 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, ChevronsUpDown, Search, Shield } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronsUpDown,
+  Search,
+  Shield,
+} from "lucide-react";
 import {
   type ColumnDef,
   type ColumnFiltersState,
@@ -41,11 +47,11 @@ import { cn } from "@/lib/utils";
 import type { RoleRow, DivisionRow } from "@/lib/actions/roles";
 
 const LEVEL_LABELS: Record<string, string> = {
-  staff: "Staff",
-  kepala: "Kepala",
-  direktur: "Direktur",
-  admin: "Admin",
-  superadmin: "Super Admin",
+  Staff: "Staff",
+  Kepala: "Kepala",
+  Direktur: "Direktur",
+  Admin: "Admin",
+  SuperAdmin: "Super Admin",
 };
 
 function SortableHeader({
@@ -57,7 +63,8 @@ function SortableHeader({
   children: React.ReactNode;
   className?: string;
 }) {
-  const Icon = sorted === "asc" ? ArrowUp : sorted === "desc" ? ArrowDown : ChevronsUpDown;
+  const Icon =
+    sorted === "asc" ? ArrowUp : sorted === "desc" ? ArrowDown : ChevronsUpDown;
   return (
     <span
       className={cn(
@@ -154,7 +161,9 @@ export function RolesManager({
             className="inline-flex"
             onClick={column.getToggleSortingHandler()}
           >
-            <SortableHeader sorted={column.getIsSorted()}>Divisi</SortableHeader>
+            <SortableHeader sorted={column.getIsSorted()}>
+              Divisi
+            </SortableHeader>
           </button>
         ),
         cell: ({ row }) => row.original.divisionName ?? "Semua divisi",
@@ -168,7 +177,9 @@ export function RolesManager({
             className="inline-flex"
             onClick={column.getToggleSortingHandler()}
           >
-            <SortableHeader sorted={column.getIsSorted()}>Permissions</SortableHeader>
+            <SortableHeader sorted={column.getIsSorted()}>
+              Permissions
+            </SortableHeader>
           </button>
         ),
         cell: ({ row }) => (
@@ -187,7 +198,9 @@ export function RolesManager({
             <SortableHeader sorted={column.getIsSorted()}>Users</SortableHeader>
           </button>
         ),
-        cell: ({ row }) => <span className="tabular-nums">{row.original.userCount}</span>,
+        cell: ({ row }) => (
+          <span className="tabular-nums">{row.original.userCount}</span>
+        ),
       },
       {
         id: "actions",
@@ -265,7 +278,9 @@ export function RolesManager({
     <div className="mx-auto w-full max-w-5xl space-y-6 p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-heading text-xl font-semibold tracking-tight">Roles</h1>
+          <h1 className="font-heading text-xl font-semibold tracking-tight">
+            Roles
+          </h1>
           <p className="text-sm text-muted-foreground">
             Definisikan role, level, dan divisi — basis pemberian permission.
           </p>
@@ -321,7 +336,10 @@ export function RolesManager({
                   <TableHead key={header.id} className="whitespace-nowrap">
                     {header.isPlaceholder
                       ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
                   </TableHead>
                 ))}
               </TableRow>
@@ -330,7 +348,10 @@ export function RolesManager({
           <TableBody>
             {table.getRowModel().rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length} className="py-10 text-center text-muted-foreground">
+                <TableCell
+                  colSpan={columns.length}
+                  className="py-10 text-center text-muted-foreground"
+                >
                   Tidak ada role yang cocok dengan filter.
                 </TableCell>
               </TableRow>
@@ -339,7 +360,10 @@ export function RolesManager({
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>

@@ -39,7 +39,6 @@ async function db() {
   return supabase.schema("accounting");
 }
 
-
 function mapRow(r: {
   id: string;
   name: string;
@@ -130,14 +129,17 @@ function validateCompany(input: CompanyInput): string | null {
   return null;
 }
 
-export async function createCompany(input: CompanyInput): Promise<ActionResult> {
+export async function createCompany(
+  input: CompanyInput,
+): Promise<ActionResult> {
   try {
     await requirePermission("user", "create");
     const invalid = validateCompany(input);
     if (invalid) return { ok: false, error: invalid };
 
     const { error } = await db().then((s) =>
-      s.from("companies").insert({        created_at: new Date().toISOString(),
+      s.from("companies").insert({
+        created_at: new Date().toISOString(),
 
         id: crypto.randomUUID(),
         name: input.name.trim(),
@@ -148,7 +150,6 @@ export async function createCompany(input: CompanyInput): Promise<ActionResult> 
         tax_number: input.taxNumber || null,
         logo: input.logo || null,
         updated_at: new Date().toISOString(),
-      
       } as never),
     );
     if (error) return { ok: false, error: guardErr(error) };

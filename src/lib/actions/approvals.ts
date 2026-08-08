@@ -46,7 +46,6 @@ async function db() {
   return supabase.schema("accounting");
 }
 
-
 const toNumber = (v: string | number): number =>
   typeof v === "number" ? v : Number(v);
 
@@ -138,7 +137,8 @@ export async function approveTransaction(
     }
 
     const { error: insError } = await db().then((s) =>
-      s.from("approvals").insert({        created_at: new Date().toISOString(),
+      s.from("approvals").insert({
+        created_at: new Date().toISOString(),
 
         id: crypto.randomUUID(),
         transaction_id: id,
@@ -185,7 +185,8 @@ export async function rejectTransaction(
     }
 
     const { error: insError } = await db().then((s) =>
-      s.from("approvals").insert({        created_at: new Date().toISOString(),
+      s.from("approvals").insert({
+        created_at: new Date().toISOString(),
 
         id: crypto.randomUUID(),
         transaction_id: id,

@@ -171,9 +171,9 @@ export function CompanyManager({ rows }: { rows: CompanyRow[] }) {
         id: "isActive",
         accessorKey: "isActive",
         filterFn: (row, columnId, filterValue: string) => {
-          if (filterValue === "aktif")
+          if (filterValue === "Aktif")
             return row.getValue<boolean>(columnId) === true;
-          if (filterValue === "nonaktif")
+          if (filterValue === "Nonaktif")
             return row.getValue<boolean>(columnId) === false;
           return true;
         },
@@ -296,7 +296,7 @@ export function CompanyManager({ rows }: { rows: CompanyRow[] }) {
           onValueChange={(v) => {
             setColumnFilters((prev) => [
               ...prev.filter((f) => f.id !== "isActive"),
-              ...(v && v !== "semua" ? [{ id: "isActive", value: v }] : []),
+              ...(v && v !== "" ? [{ id: "isActive", value: v }] : []),
             ]);
           }}
         >
@@ -305,9 +305,9 @@ export function CompanyManager({ rows }: { rows: CompanyRow[] }) {
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="semua">Semua status</SelectItem>
-              <SelectItem value="aktif">Aktif</SelectItem>
-              <SelectItem value="nonaktif">Nonaktif</SelectItem>
+              <SelectItem value="">Semua status</SelectItem>
+              <SelectItem value="Aktif">Aktif</SelectItem>
+              <SelectItem value="Nonaktif">Nonaktif</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
@@ -323,7 +323,8 @@ export function CompanyManager({ rows }: { rows: CompanyRow[] }) {
           Tambah
         </Button>
         <span className="text-xs text-muted-foreground">
-          {table.getFilteredRowModel().rows.length} dari {rows.length} perusahaan
+          {table.getFilteredRowModel().rows.length} dari {rows.length}{" "}
+          perusahaan
         </span>
       </div>
 

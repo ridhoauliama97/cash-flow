@@ -39,17 +39,17 @@ export function ApprovalManager({ rows }: { rows: PendingApprovalRow[] }) {
   const [noteText, setNoteText] = useState("");
   const [actionTarget, setActionTarget] = useState<{
     id: string;
-    action: "approve" | "reject";
+    action: "Approve" | "Reject";
   } | null>(null);
 
   async function handleApprove(id: string) {
-    setActionTarget({ id, action: "approve" });
+    setActionTarget({ id, action: "Approve" });
     setNoteText("");
     setNoteOpen(true);
   }
 
   async function handleReject(id: string) {
-    setActionTarget({ id, action: "reject" });
+    setActionTarget({ id, action: "Reject" });
     setNoteText("");
     setNoteOpen(true);
   }
@@ -59,7 +59,7 @@ export function ApprovalManager({ rows }: { rows: PendingApprovalRow[] }) {
     setNoteOpen(false);
     setBusyId(actionTarget.id);
     const res =
-      actionTarget.action === "approve"
+      actionTarget.action === "Approve"
         ? await approveTransaction(actionTarget.id, noteText || undefined)
         : await rejectTransaction(actionTarget.id, noteText || undefined);
     setBusyId(null);
@@ -68,7 +68,7 @@ export function ApprovalManager({ rows }: { rows: PendingApprovalRow[] }) {
       return;
     }
     toast.success(
-      actionTarget.action === "approve"
+      actionTarget.action === "Approve"
         ? "Transaksi disetujui"
         : "Transaksi ditolak",
     );
@@ -118,15 +118,15 @@ export function ApprovalManager({ rows }: { rows: PendingApprovalRow[] }) {
                   <TableCell>
                     <Badge
                       variant={
-                        row.type === "expense" ? "destructive" : "default"
+                        row.type === "Expense" ? "destructive" : "default"
                       }
                       className={
-                        row.type === "income"
+                        row.type === "Income"
                           ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
                           : undefined
                       }
                     >
-                      {row.type === "income" ? "Pemasukan" : "Pengeluaran"}
+                      {row.type === "Income" ? "Pemasukan" : "Pengeluaran"}
                     </Badge>
                   </TableCell>
                   <TableCell className="max-w-48 truncate">
@@ -179,7 +179,7 @@ export function ApprovalManager({ rows }: { rows: PendingApprovalRow[] }) {
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>
-              {actionTarget?.action === "approve" ? "Setujui" : "Tolak"}{" "}
+              {actionTarget?.action === "Approve" ? "Setujui" : "Tolak"}{" "}
               Transaksi
             </DialogTitle>
             <DialogDescription>
@@ -203,10 +203,10 @@ export function ApprovalManager({ rows }: { rows: PendingApprovalRow[] }) {
             <Button
               onClick={confirmAction}
               variant={
-                actionTarget?.action === "reject" ? "destructive" : "default"
+                actionTarget?.action === "Reject" ? "destructive" : "default"
               }
             >
-              {actionTarget?.action === "approve" ? "Setujui" : "Tolak"}
+              {actionTarget?.action === "Approve" ? "Setujui" : "Tolak"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -14,9 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TransactionFormDialog } from "@/components/shared/transaction-form-dialog";
-import {
-  TransactionsTable,
-} from "@/components/shared/transactions-table";
+import { TransactionsTable } from "@/components/shared/transactions-table";
 import { deleteTransaction } from "@/lib/actions/transactions";
 import { submitForApproval } from "@/lib/actions/approvals";
 import { postJournalAction } from "@/lib/actions/ledger";
@@ -114,8 +112,8 @@ export function TransactionManager({
             <SelectContent>
               <SelectGroup>
                 <SelectItem value="">Semua</SelectItem>
-                <SelectItem value="income">Pemasukan</SelectItem>
-                <SelectItem value="expense">Pengeluaran</SelectItem>
+                <SelectItem value="Income">Pemasukan</SelectItem>
+                <SelectItem value="Expense">Pengeluaran</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
@@ -132,11 +130,11 @@ export function TransactionManager({
             <SelectContent>
               <SelectGroup>
                 <SelectItem value="">Semua</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="pending">Menunggu</SelectItem>
-                <SelectItem value="approved">Disetujui</SelectItem>
-                <SelectItem value="rejected">Ditolak</SelectItem>
-                <SelectItem value="posted">Diposting</SelectItem>
+                <SelectItem value="Draft">Draft</SelectItem>
+                <SelectItem value="Pending">Menunggu</SelectItem>
+                <SelectItem value="Approved">Disetujui</SelectItem>
+                <SelectItem value="Rejected">Ditolak</SelectItem>
+                <SelectItem value="Posted">Diposting</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>

@@ -76,7 +76,10 @@ export function CostCenterManager({
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
+                <TableCell
+                  colSpan={4}
+                  className="py-10 text-center text-muted-foreground"
+                >
                   Belum ada cost center — buat cost center pertama.
                 </TableCell>
               </TableRow>
@@ -89,12 +92,17 @@ export function CostCenterManager({
                   <TableCell>{row.name}</TableCell>
                   <TableCell>
                     <Badge variant="secondary">
-                      {divisions.find((d) => d.id === row.divisionId)?.name ?? "—"}
+                      {divisions.find((d) => d.id === row.divisionId)?.name ??
+                        "—"}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(row)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEdit(row)}
+                      >
                         Edit
                       </Button>
                       <Button

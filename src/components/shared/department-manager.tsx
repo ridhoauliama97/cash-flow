@@ -253,7 +253,7 @@ export function DepartmentManager({
           onValueChange={(v) => {
             setColumnFilters((prev) => [
               ...prev.filter((f) => f.id !== "divisionName"),
-              ...(v && v !== "semua" ? [{ id: "divisionName", value: v }] : []),
+              ...(v && v !== "" ? [{ id: "divisionName", value: v }] : []),
             ]);
           }}
         >
@@ -262,7 +262,7 @@ export function DepartmentManager({
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="semua">Semua divisi</SelectItem>
+              <SelectItem value="">Semua divisi</SelectItem>
               {divisionNames.map((d) => (
                 <SelectItem key={d} value={d}>
                   {d}
@@ -283,7 +283,8 @@ export function DepartmentManager({
           Tambah
         </Button>
         <span className="text-xs text-muted-foreground">
-          {table.getFilteredRowModel().rows.length} dari {rows.length} departemen
+          {table.getFilteredRowModel().rows.length} dari {rows.length}{" "}
+          departemen
         </span>
       </div>
 

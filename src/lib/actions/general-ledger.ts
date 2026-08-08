@@ -51,7 +51,6 @@ async function db() {
   return supabase.schema("accounting");
 }
 
-
 const toNumber = (v: string | number): number =>
   typeof v === "number" ? v : Number(v);
 

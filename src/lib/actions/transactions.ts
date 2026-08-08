@@ -1,10 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import {
-  requireCanModifyData,
-  requirePermission,
-} from "@/lib/rbac";
+import { requireCanModifyData, requirePermission } from "@/lib/rbac";
 import { createClient } from "@/lib/supabase/server";
 import {
   createTransaction,
@@ -78,7 +75,6 @@ async function db() {
   const supabase = await createClient();
   return supabase.schema("accounting");
 }
-
 
 /**
  * List transaksi kas (date desc) + nama cost center & pembuat untuk display.
