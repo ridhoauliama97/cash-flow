@@ -20,6 +20,8 @@ export SUPABASE_ACCESS_TOKEN="<sbp_ token>"
 ~/.supabase/bin/supabase db push   # project is linked (uyygrpyylyzqlqjguikx); do NOT pass --project-ref, it errors
 ```
 
+Edge function deploy (scheduled report delivery): `supabase functions deploy report-delivery --no-verify-jwt` (see `supabase/functions/report-delivery/index.ts`).
+
 ## Architecture
 
 - **Single source of truth**: `src/context/app-context.tsx` `DataProvider`/`useApp()` — all data, CRUD, rates state. Pages never call the store directly.
@@ -28,7 +30,7 @@ export SUPABASE_ACCESS_TOKEN="<sbp_ token>"
 - **Analytics layer**: pure functions in `src/lib/analytics/*.ts` with colocated `*.test.ts` — the only unit-tested code. Keep pure (no React/DOM); keep business math here, not in pages.
 - **Currency**: amounts store the original currency + `baseAmount` converted to `homeCurrency` at build time via `convert()` in `src/lib/currency.ts`. Rates come from currencyapi with static fallback.
 - **Types**: domain types in `src/types/index.ts`. Transaction types are `"revenue" | "expense"` (NOT "income"). `erasableSyntaxOnly` is on — no TS enums; use `const` arrays + union types (see `CURRENCIES`, `TRANSACTION_TYPES`).
-- **UI**: `src/components/ui/*` are shadcn primitives; `src/components/shared/*` are app components. `TooltipProvider` is mounted once in `src/main.tsx` — don't add per-component providers.
+- **UI**: `src/components/ui/*` are shadcn primitives; `src/components/shared/*` are app components; `src/components/charts/*` are Recharts wrappers. `TooltipProvider` is mounted once in `src/main.tsx` — don't add per-component providers.
 - **Routing**: `src/App.tsx` — routes, auth `Gate`, lazy-loaded pages.
 
 ## Repo quirks (hard-earned)
@@ -37,6 +39,7 @@ export SUPABASE_ACCESS_TOKEN="<sbp_ token>"
 - **Migration workflow**: feature = SQL migration in `supabase/migrations/` (0001_init, 0005_bills, …) + type + both stores + context + demo data + tests. Push with the CLI above, then verify via the Supabase Management API SQL query endpoint if needed.
 - **CSV import** (`src/lib/csv.ts`): PapaParse; auto header detection + user column mapping + dedupe against existing rows (signature: date+description+amount+currency). Dates support US/EU formats. README's CSV section is stale (columns `account`/`income` no longer exist).
 - **Saved views** (`src/hooks/use-saved-views.ts`): persisted in localStorage `cash-flow:saved-views`, integrated in `FilterBar`.
-- **Demo data** (`src/lib/demo.ts`): deterministic (mulberry32), window = last 365 days ending today; demo reset only in local mode.
+- **Demo data** (`src/lib/demo.ts`): deterministic (mulberry32), walks back 12 full months + current month from today; demo reset only in local mode.
+- **PRD.md**: draft spec (in Indonesian) for a FUTURE rebuild on Next.js + Prisma — the current repo is Vite + React. Don't implement its tables (chart_of_accounts, journal_entries, approvals, roles…) into this codebase without asking.
 - **.env**: gitignored, read only at build time (VITE_ prefix). Never commit it or any Supabase tokens.
 - Git workflow: direct commits to `main` (conventional style: `feat:`, `fix:`, `refactor:`), push; CI runs typecheck/lint/tests/build on push and PRs.

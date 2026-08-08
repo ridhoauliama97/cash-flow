@@ -11,9 +11,13 @@ Runs out of the box with **deterministic demo data** (no configuration required)
 - **Expense analytics** — category breakdown, budget vs actual, monthly trend
 - **Cash flow** — waterfall chart, net cash position, weekly spending pattern
 - **Receivables aging** — 5 aging buckets (current / 30 / 60 / 90 / 90+ days), overdue amounts, per-client breakdown
+- **Bills (AP)** — vendor bills tracker with the same lifecycle (unpaid / partial / paid) and aging as receivables
+- **Profitability** — MRR/ARR, burn rate, monthly profit & margin, dimension breakdown (client/region/project/department)
 - **Multi-currency** — 7 currencies (USD, EUR, GBP, JPY, AUD, SGD, IDR), home currency configurable (default **IDR**), live rates via [currencyapi.com](https://currencyapi.com) with offline fallback
 - **Transactions** — full CRUD, search, filters (category, type, date range, amount), CSV export
-- **CSV import** — bulk import with automatic category inference and template download
+- **CSV import** — bulk import with automatic category inference, header mapping, and template download
+- **Global search & notifications** — Cmd+K command palette, in-app notification center
+- **Saved views** — persist filter combinations per page
 - **Forecast** — 90-day trend + seasonality projection with confidence band
 - **Reports** — Profit & Loss, Balance Sheet, Cash Flow Statement with CSV/PDF export
 - **Schedules** — recurring report delivery (demo mode shows a delivery log; with Supabase, paired with the `report-delivery` edge function)
@@ -70,30 +74,32 @@ The frontend only ever reads `VITE_`-prefixed variables at build time.
 
 ## CSV Import Format
 
-The import page offers a **template download** (matches the expected columns exactly). Minimal required columns:
+The import page offers a **template download** (matches the expected columns exactly). Required columns: `date`, `type`, `amount`, `currency`. Everything else is optional:
 
 ```
-date,type,amount,currency,category,description,account
-2026-08-01,income,5000000,IDR,Sales,Custom web app invoice,Operating
+date,type,description,amount,currency,category,client,region,project,department
+2026-08-01,revenue,"Monthly retainer — Acme Inc",2500,USD,"Client Services",Acme,US,"Website Retainer",Product
+2026-08-03,expense,"Figma subscription",15,USD,"Software & Subscriptions",,,,Engineering
 ```
 
-- `type`: `income` | `expense`
+- `type`: `revenue` | `expense`
 - `currency`: `IDR` | `USD` | `EUR` | `GBP` | `JPY` | `AUD` | `SGD`
 - `category`: optional — inferred automatically from the description when missing
+- `client`/`region`/`project`/`department`: optional dims (included in reports)
 - `amount`: numeric; decimals only for non-IDR currencies
-- `date`: `YYYY-MM-DD`
+- `date`: `YYYY-MM-DD` (US/EU formats also auto-detected)
 
 ## Project Structure
 
 ```
 src/
 ├── components/
-│   ├── charts/      # Recharts wrappers (area, donut, waterfall, forecast, balance, compare)
+│   ├── charts/      # Recharts wrappers (area, donut, waterfall, forecast, balance, compare…)
 │   ├── layout/      # sidebar, topbar, mode badge
-│   ├── shared/      # KPI card, filter bar, currency select, form dialogs, transactions table
+│   ├── shared/      # KPI card, filter bar, currency select, form dialogs, transactions table, global search, notification menu
 │   └── ui/          # shadcn/ui primitives
 ├── context/         # DataProvider + useApp() (all data/CRUD/rates state)
-├── hooks/           # theme, schedule delivery
+├── hooks/           # theme, notifications, saved views, schedule delivery
 ├── lib/
 │   ├── analytics/   # pure, unit-tested analytics (KPIs, aging, waterfall, forecast, compare…)
 │   ├── store/       # local (demo) + supabase stores, resolver
@@ -103,7 +109,7 @@ src/
 │   ├── reports.ts   # P&L / balance sheet / cash flow + CSV/PDF export
 │   ├── format.ts    # money/date/number formatting
 │   └── utils.ts
-├── pages/           # 11 routed pages + login
+├── pages/           # 12 routed pages + login
 ├── types/           # domain types, filters, currencies
 └── App.tsx          # routes, auth gate, lazy-loaded pages
 ```
@@ -111,7 +117,7 @@ src/
 ## Testing
 
 ```bash
-./node_modules/.bin/vitest run
+pnpm exec vitest run
 ```
 
-61 unit tests cover the pure analytics layer: periods, filters/accrual, KPIs, aging buckets, waterfall, forecasting, comparisons, currency conversion, and CSV parsing.
+100 unit tests cover the pure analytics layer: periods, filters/accrual, KPIs, aging buckets, waterfall, forecasting, profitability, MRR/burn, comparisons, notifications, saved views, currency conversion, and CSV parsing.
