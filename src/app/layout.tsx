@@ -1,16 +1,11 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const inter = Inter({
+  variable: "--font-sans",
   subsets: ["latin"],
 });
 
@@ -31,10 +26,8 @@ export default async function RootLayout({
 
   return (
     <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${
-        theme === "dark" ? "dark" : ""
-      } h-full antialiased`}
+      lang="id"
+      className={`${inter.variable} ${theme === "dark" ? "dark" : ""} h-full antialiased`}
       style={{ colorScheme: theme }}
     >
       <body className="min-h-full flex flex-col">

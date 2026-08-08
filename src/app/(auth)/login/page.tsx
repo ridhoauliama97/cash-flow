@@ -10,7 +10,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -95,27 +94,18 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-8 bg-muted/30 p-4 dark:bg-black">
-      <div className="flex items-center gap-3">
-        <div className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-          <Wallet className="size-5" />
-        </div>
-        <div>
-          <p className="text-base font-semibold leading-none">Cash Flow</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Finance &amp; Accounting
-          </p>
-        </div>
-      </div>
-
+    <main className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle className="text-lg">Masuk</CardTitle>
+        <CardHeader className="items-center text-center">
+          <div className="mb-2 flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <Wallet className="size-5" />
+          </div>
+          <CardTitle className="text-xl">Cash Flow Dashboard</CardTitle>
           <CardDescription>
-            Masukkan akun Anda untuk mengakses sistem.
+            Masuk ke akun Anda untuk mengakses sistem.
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-(--card-spacing)">
+        <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="email">Email</Label>
@@ -123,9 +113,7 @@ export default function LoginPage() {
                 id="email"
                 type="email"
                 autoComplete="email"
-                placeholder="nama@perusahaan.com"
-                className="h-9"
-                required
+                placeholder="you@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -138,8 +126,7 @@ export default function LoginPage() {
                   type={showPassword ? "text" : "password"}
                   autoComplete={showPassword ? "off" : "current-password"}
                   placeholder="••••••••"
-                  className="h-9 pr-10"
-                  required
+                  className="pr-10"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -168,18 +155,12 @@ export default function LoginPage() {
                 {error}
               </p>
             )}
-          </CardContent>
-          <CardFooter>
-            <Button type="submit" className="h-9 w-full" disabled={loading}>
-              {loading ? "Memproses…" : "Masuk"}
+            <Button type="submit" className="w-full" disabled={loading || !email || !password}>
+              {loading ? "Please wait…" : "Sign in"}
             </Button>
-          </CardFooter>
+          </CardContent>
         </form>
       </Card>
-
-      <p className="text-xs text-muted-foreground">
-        Cash Flow &amp; Accounting — Fase 1 MVP
-      </p>
     </main>
   );
 }
