@@ -25,6 +25,10 @@ model User {
   roles      UserRole[]
   transactions Transaction[] @relation("TransactionCreator")
   approvals  Approval[]
+  invoices   Invoice[]     @relation("InvoiceCreator")
+  forecasts  Forecast[]    @relation("ForecastCreator")
+  importBatches ImportBatch[] @relation("ImportCreator")
+  schedules  Schedule[]    @relation("ScheduleCreator")
 
   @@schema("accounting")
   @@map("users")
@@ -118,6 +122,7 @@ model Customer {
   id          String   @id @default(uuid()) @db.Uuid
   name        String
   contactInfo String?  @map("contact_info")
+  invoices    Invoice[]
   createdAt   DateTime @default(now()) @map("created_at")
 
   @@schema("accounting")
@@ -128,6 +133,7 @@ model Supplier {
   id          String   @id @default(uuid()) @db.Uuid
   name        String
   contactInfo String?  @map("contact_info")
+  invoices    Invoice[]
   createdAt   DateTime @default(now()) @map("created_at")
 
   @@schema("accounting")
@@ -234,4 +240,100 @@ model Approval {
   @@index([approverId])
   @@schema("accounting")
   @@map("approvals")
+}
+
+/// Invoice untuk modul Receivable & Payable — melacak tagihan piutang (dari
+/// pelanggan) dan hutang (ke pemasok). status: draft, sent, paid, overdue,
+/// cancelled. type: receivable (piutang) | payable (hutang).
+model Invoice {
+  id          String   @id @default(uuid()) @db.Uuid
+  type        String   // receivable | payable
+  number      String   @unique // nomor invoice unik
+  customerId  String?  @map("customer_id") @db.Uuid
+  customer    Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  supplierId  String?  @map("supplier_id") @db.Uuid
+  supplier    Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  description String
+  amount      Decimal  // jumlah tagihan
+  currency    String   @default("IDR")
+  status      String   @default("draft") // draft | sent | paid | overdue | cancelled
+  dueDate     DateTime @map("due_date")
+  paidAt      DateTime? @map("paid_at")
+  createdBy   String   @map("created_by") @db.Uuid
+  createdByUser User?  @relation("InvoiceCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([type, status])
+  @@index([customerId])
+  @@index([supplierId])
+  @@index([dueDate])
+  @@schema("accounting")
+  @@map("invoices")
+}
+
+/// Proyeksi anggaran per bulan untuk modul Forecast — berisi estimasi
+/// pendapatan/beban per kategori per bulan.
+model Forecast {
+  id          String   @id @default(uuid()) @db.Uuid
+  year        Int
+  month       Int      // 1-12
+  category    String   // revenue | expense | profit
+  description String?
+  amount      Decimal  // estimasi nominal
+  currency    String   @default("IDR")
+  createdBy   String   @map("created_by") @db.Uuid
+  createdByUser User?  @relation("ForecastCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([year, month, category])
+  @@index([year, month])
+  @@schema("accounting")
+  @@map("forecasts")
+}
+
+/// Batch upload CSV/Excel untuk modul Import — melacak setiap sesi import
+/// beserta status, jumlah baris, dan error log.
+model ImportBatch {
+  id          String   @id @default(uuid()) @db.Uuid
+  filename    String
+  status      String   @default("pending") // pending | processing | completed | failed
+  totalRows   Int      @default(0)
+  successRows Int      @default(0) @map("success_rows")
+  errorRows   Int      @default(0) @map("error_rows")
+  errorLog    String?  @map("error_log") // JSON array of { row, message }
+  createdBy   String   @map("created_by") @db.Uuid
+  createdByUser User?  @relation("ImportCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  createdAt   DateTime @default(now()) @map("created_at")
+  completedAt DateTime? @map("completed_at")
+
+  @@index([createdBy])
+  @@index([status])
+  @@schema("accounting")
+  @@map("import_batches")
+}
+
+/// Jadwal pengiriman laporan berkala untuk modul Schedules — user bisa
+/// menjadwalkan laporan (GL, profitability, dll) untuk dikirim otomatis.
+model Schedule {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   // nama jadwal, misal "Laporan GL Bulanan"
+  reportType  String   @map("report_type") // general-ledger | profitability | cash-flow | revenue | expenses
+  frequency   String   // daily | weekly | monthly | quarterly
+  dayOfMonth  Int?     @map("day_of_month") // 1-31 untuk monthly
+  dayOfWeek   Int?     @map("day_of_week")  // 0-6 untuk weekly (0= Minggu)
+  timeOfDay   String   @default("08:00") @map("time_of_day") // HH:MM
+  recipients  String[] // array email penerima
+  format      String   @default("pdf") // pdf | csv | xlsx
+  enabled     Boolean  @default(true)
+  lastSentAt  DateTime? @map("last_sent_at")
+  createdBy   String   @map("created_by") @db.Uuid
+  createdByUser User?  @relation("ScheduleCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([createdBy])
+  @@schema("accounting")
+  @@map("schedules")
 }
