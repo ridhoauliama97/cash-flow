@@ -38,6 +38,8 @@ export const DEFAULT_DIVISIONS = [
   "Internal Audit",
 ] as const;
 
+export const SUPER_ADMIN_ROLE_NAME = "Super Admin";
+
 export function isRoleLevel(v: string): v is RoleLevel {
   return (ROLE_LEVELS as readonly string[]).includes(v);
 }
