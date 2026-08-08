@@ -2,22 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useTheme } from "next-themes";
 import {
   ArrowDownUp,
   Building2,
   FileText,
   FolderTree,
   LayoutDashboard,
-  Moon,
   Settings,
-  Sun,
   Truck,
   Users,
   Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 
 const NAV_ITEMS = [
   { to: "/", label: "Overview", icon: LayoutDashboard },
@@ -31,7 +28,6 @@ const NAV_ITEMS = [
 ];
 
 export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { resolvedTheme, setTheme } = useTheme();
   const pathname = usePathname();
 
   return (
@@ -82,19 +78,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
         </nav>
 
         <div className="border-t border-sidebar-border p-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start text-muted-foreground"
-            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-          >
-            {resolvedTheme === "dark" ? (
-              <Sun className="size-4" />
-            ) : (
-              <Moon className="size-4" />
-            )}
-            {resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
-          </Button>
+          <ThemeToggle />
         </div>
       </aside>
     </>
