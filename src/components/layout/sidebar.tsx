@@ -39,7 +39,6 @@ const NAV_ITEMS: SidebarMenuItemData[] = [
   { to: "/analytics/receivables", label: "Receivable & Payable", icon: PiggyBank, permission: ["analytics", "read"] },
   { to: "/transactions", label: "Transactions", icon: ArrowDownUp, permission: ["transaction", "read"] },
   { to: "/approvals", label: "Approvals", icon: ClipboardCheck, permission: ["transaction", "approve"] },
-  { to: "/master/chart-of-accounts", label: "Master Data", icon: FolderTree, permission: ["master-data", "read"] },
   { to: "/analytics/forecast", label: "Forecast", icon: CalendarClock, permission: ["analytics", "read"] },
   { to: "/reports/journal", label: "Journal / General Ledger", icon: FileText, permission: ["ledger", "read"] },
   { to: "/analytics/import", label: "Import Data", icon: Upload, permission: ["import", "read"] },
@@ -108,7 +107,7 @@ export function Sidebar({
             onClose={onClose}
           />
 
-          {hasPermission(allowed, ["master-data", "read"]) && (
+          {MASTER_SUB.some((sub) => hasPermission(allowed, sub.permission)) && (
             <div className="mt-4">
               <button
                 type="button"
