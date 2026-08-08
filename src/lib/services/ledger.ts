@@ -226,6 +226,10 @@ export async function postJournal(
           description: e.description,
         })),
       });
+      await tx.transaction.update({
+        where: { id: txn.id },
+        data: { status: "posted" },
+      });
     });
 
     return { ok: true, data: { alreadyPosted: false } };

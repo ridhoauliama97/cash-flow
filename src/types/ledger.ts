@@ -21,6 +21,7 @@ export const TRANSACTION_STATUSES = [
   "pending",
   "approved",
   "rejected",
+  "posted",
 ] as const;
 export type TransactionStatus = (typeof TRANSACTION_STATUSES)[number];
 

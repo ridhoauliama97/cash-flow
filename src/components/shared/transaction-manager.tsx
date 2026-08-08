@@ -21,6 +21,7 @@ import {
 } from "@/components/shared/transactions-table";
 import { deleteTransaction } from "@/lib/actions/transactions";
 import { submitForApproval } from "@/lib/actions/approvals";
+import { postJournalAction } from "@/lib/actions/ledger";
 import type { TransactionRow } from "@/lib/actions/transactions";
 import type { CostCenterRow } from "@/lib/cost-centers";
 import type { TransactionStatus } from "@/types/ledger";
@@ -73,6 +74,17 @@ export function TransactionManager({
       return;
     }
     toast.success("Transaksi diajukan");
+    router.refresh();
+  }
+
+  async function handlePost(row: TransactionRow) {
+    if (!confirm(`Posting jurnal untuk transaksi "${row.description}"?`)) return;
+    const res = await postJournalAction(row.id);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
+    toast.success("Jurnal diposting");
     router.refresh();
   }
 
@@ -138,7 +150,7 @@ export function TransactionManager({
         </div>
       </div>
 
-      <TransactionsTable rows={filteredRows} onDelete={handleDelete} onEdit={openEdit} onSubmit={handleSubmit} />
+      <TransactionsTable rows={filteredRows} onDelete={handleDelete} onEdit={openEdit} onSubmit={handleSubmit} onPost={handlePost} />
 
       <TransactionFormDialog
         key={editing ? `edit-${editing.id}` : "create"}

@@ -27,16 +27,18 @@ export const TRANSACTION_STATUS_LABELS: Record<TransactionStatus, string> = {
   pending: "Menunggu",
   approved: "Disetujui",
   rejected: "Ditolak",
+  posted: "Diposting",
 };
 
 const STATUS_BADGE_VARIANTS: Record<
   TransactionStatus,
-  "default" | "secondary" | "outline" | "destructive"
+  "default" | "secondary" | "outline" | "destructive" | "success"
 > = {
   draft: "secondary",
   pending: "outline",
   approved: "default",
   rejected: "destructive",
+  posted: "success",
 };
 
 export interface TransactionsTableProps {
@@ -44,9 +46,10 @@ export interface TransactionsTableProps {
   onDelete: (row: TransactionRow) => void;
   onEdit: (row: TransactionRow) => void;
   onSubmit: (row: TransactionRow) => void;
+  onPost: (row: TransactionRow) => void;
 }
 
-export function TransactionsTable({ rows, onDelete, onEdit, onSubmit }: TransactionsTableProps) {
+export function TransactionsTable({ rows, onDelete, onEdit, onSubmit, onPost }: TransactionsTableProps) {
   return (
     <div className="rounded-xl border bg-card">
       <Table>
@@ -136,12 +139,27 @@ export function TransactionsTable({ rows, onDelete, onEdit, onSubmit }: Transact
                         <Button
                           variant="ghost"
                           size="sm"
+                          onClick={() => onPost(row)}
+                        >
+                          Posting
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           className="text-destructive"
                           onClick={() => onDelete(row)}
                         >
                           Hapus
                         </Button>
                       </>
+                    ) : row.status === "approved" ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onPost(row)}
+                      >
+                        Posting
+                      </Button>
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}
