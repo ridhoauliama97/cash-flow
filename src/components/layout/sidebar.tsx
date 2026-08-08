@@ -88,10 +88,10 @@ const NAV_ITEMS = [
     permission: ["analytics", "read"] as const,
   },
   {
-    to: "/reports/general-ledger",
-    label: "Reports & Export",
+    to: "/reports/journal",
+    label: "Journal / General Ledger",
     icon: FileText,
-    permission: ["report", "read"] as const,
+    permission: ["ledger", "read"] as const,
   },
   {
     to: "/analytics/import",
