@@ -52,9 +52,9 @@ const MASTER_SUB: SidebarMenuItemData[] = [
   { to: "/master/customers", label: "Customers", icon: Users, permission: ["master-data", "read"] },
   { to: "/master/suppliers", label: "Suppliers", icon: Truck, permission: ["master-data", "read"] },
   { to: "/master/products", label: "Products", icon: Package, permission: ["master-data", "read"] },
-  { to: "/settings/departments", label: "Departments", icon: Building2, permission: ["user", "read"] },
-  { to: "/settings/divisions", label: "Divisions", icon: FolderTree, permission: ["user", "read"] },
-  { to: "/settings/employees", label: "Employees", icon: Users, permission: ["user", "read"] },
+  { to: "/master/departments", label: "Departments", icon: Building2, permission: ["master-data", "read"] },
+  { to: "/master/divisions", label: "Divisions", icon: FolderTree, permission: ["master-data", "read"] },
+  { to: "/master/employees", label: "Employees", icon: Users, permission: ["master-data", "read"] },
 ];
 
 type NavPermission = readonly [module: string, action: string];
