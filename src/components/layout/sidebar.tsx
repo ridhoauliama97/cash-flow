@@ -120,10 +120,12 @@ const NAV_ITEMS = [
 ];
 
 const MASTER_SUB = [
-  { to: "/master/customers", label: "Customers", icon: Users },
-  { to: "/master/suppliers", label: "Suppliers", icon: Truck },
-  { to: "/master/cost-centers", label: "Cost Centers", icon: Building2 },
-  { to: "/master/products", label: "Products", icon: Package },
+  { to: "/master/customers", label: "Customers", icon: Users, permission: ["master-data", "read"] as const },
+  { to: "/master/suppliers", label: "Suppliers", icon: Truck, permission: ["master-data", "read"] as const },
+  { to: "/master/products", label: "Products", icon: Package, permission: ["master-data", "read"] as const },
+  { to: "/settings/departments", label: "Departments", icon: Building2, permission: ["user", "read"] as const },
+  { to: "/settings/divisions", label: "Divisions", icon: FolderTree, permission: ["user", "read"] as const },
+  { to: "/settings/employees", label: "Employees", icon: Users, permission: ["user", "read"] as const },
 ];
 
 type NavPermission = readonly [module: string, action: string];
@@ -195,8 +197,8 @@ export function Sidebar({
                   {label}
                 </Link>
                 {to === "/master/chart-of-accounts" &&
-                  MASTER_SUB.filter(() =>
-                    hasPermission(allowed, ["master-data", "read"]),
+                  MASTER_SUB.filter((sub) =>
+                    hasPermission(allowed, sub.permission),
                   ).map((sub) => (
                     <Link
                       key={sub.to}
